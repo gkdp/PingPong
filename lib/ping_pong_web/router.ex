@@ -61,40 +61,40 @@ defmodule PingPongWeb.Router do
   scope "/", PingPongWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    get "/users/register", UserRegistrationController, :new
-    post "/users/register", UserRegistrationController, :create
     get "/users/log_in", UserSessionController, :new
     post "/users/log_in", UserSessionController, :create
-    get "/users/reset_password", UserResetPasswordController, :new
-    post "/users/reset_password", UserResetPasswordController, :create
-    get "/users/reset_password/:token", UserResetPasswordController, :edit
-    put "/users/reset_password/:token", UserResetPasswordController, :update
   end
 
-  scope "/", PingPongWeb do
-    pipe_through [:browser, :require_authenticated_user]
+  scope "/auth", PingPongWeb do
+    pipe_through [:browser]
 
-    get "/users/settings", UserSettingsController, :edit
-    put "/users/settings", UserSettingsController, :update
-    get "/users/settings/confirm_email/:token", UserSettingsController, :confirm_email
+    get "/:provider", SlackController, :request
+    get "/:provider/callback", SlackController, :callback
   end
 
   scope "/", PingPongWeb do
     pipe_through [:browser]
 
-    delete "/users/log_out", UserSessionController, :delete
-    get "/users/confirm", UserConfirmationController, :new
-    post "/users/confirm", UserConfirmationController, :create
-    get "/users/confirm/:token", UserConfirmationController, :edit
-    post "/users/confirm/:token", UserConfirmationController, :update
+    live "/scoreboard", ScoreboardLive.Index, :index
+
+    # live "/teams", TeamLive.Index, :index
+    # live "/teams/new", TeamLive.Index, :new
+    # live "/teams/:id/edit", TeamLive.Index, :edit
+
+    # live "/teams/:id", TeamLive.Show, :show
+    # live "/teams/:id/show/edit", TeamLive.Show, :edit
+
+    live "/scores", ScoreLive.Index, :index
+    # live "/scores/new", ScoreLive.Index, :new
+    # live "/scores/:id/edit", ScoreLive.Index, :edit
+
+    # live "/scores/:id", ScoreLive.Show, :show
+    # live "/scores/:id/show/edit", ScoreLive.Show, :edit
   end
 
-  scope "/", PingPongWeb do
-    live "/scores", ScoreLive.Index, :index
-    live "/scores/new", ScoreLive.Index, :new
-    live "/scores/:id/edit", ScoreLive.Index, :edit
+  scope "/slack", PingPongWeb do
+    pipe_through [:api]
 
-    live "/scores/:id", ScoreLive.Show, :show
-    live "/scores/:id/show/edit", ScoreLive.Show, :edit
+    post "/command", CommandController, :command
   end
 end

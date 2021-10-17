@@ -5,12 +5,15 @@ defmodule PingPong.Repo.Migrations.CreateUsersAuthTables do
     execute "CREATE EXTENSION IF NOT EXISTS citext", ""
 
     create table(:users) do
-      add :email, :citext, null: false
-      add :hashed_password, :string, null: false
+      add :slack_id, :string, null: false
+      add :email, :citext
+      add :name, :string
+      add :hashed_password, :string
       add :confirmed_at, :naive_datetime
       timestamps()
     end
 
+    create unique_index(:users, [:slack_id])
     create unique_index(:users, [:email])
 
     create table(:users_tokens) do

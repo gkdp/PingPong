@@ -6,7 +6,10 @@ defmodule PingPong.Scoreboard do
   import Ecto.Query, warn: false
   alias PingPong.Repo
 
+  alias PingPong.Commands
   alias PingPong.Scoreboard.Score
+  alias PingPong.Scoreboard.User
+  alias Slack.Web.Chat
 
   @doc """
   Returns the list of scores.
@@ -100,5 +103,124 @@ defmodule PingPong.Scoreboard do
   """
   def change_score(%Score{} = score, attrs \\ %{}) do
     Score.changeset(score, attrs)
+  end
+
+  @doc """
+  Returns the list of users.
+
+  ## Examples
+
+      iex> list_users()
+      [%User{}, ...]
+
+  """
+  def list_users do
+    Repo.all(User)
+  end
+
+  def get_user_by_slack(id) when is_binary(id) do
+    Repo.get_by(User, slack_id: id)
+  end
+
+  def get_or_create_user_by_slack(id) when is_binary(id) do
+    with nil <- get_user_by_slack(id) do
+      %User{
+        slack_id: id
+      }
+      |> Repo.insert!()
+    else
+      user -> user
+    end
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking score changes.
+
+  ## Examples
+
+      iex> process_score(score)
+      %Ecto.Changeset{data: %Score{}}
+
+  """
+  def process_score(%Commands.Report{} = report) do
+    left = get_or_create_user_by_slack(report.left_id)
+    right = get_or_create_user_by_slack(report.right_id)
+
+    winner =
+      cond do
+        report.left > report.right -> left
+        report.left < report.right -> right
+        # TODO: Gelijkspel
+        true -> left
+      end
+
+    loser = if left.id == winner.id, do: left, else: right
+
+    changeset =
+      Score.changeset(%Score{}, %{
+        left_id: left.id,
+        right_id: right.id,
+        winner_id: winner.id,
+        left_score: report.left,
+        right_score: report.right
+      })
+
+    score =
+      changeset
+      |> Repo.insert()
+
+    with {:ok, score} = tuple <- score do
+      send_confirm_message(
+        {winner, if(left.id == winner.id, do: report.left, else: report.right)},
+        {loser, if(left.id != winner.id, do: report.left, else: report.right)},
+        score
+      )
+
+      tuple
+    end
+  end
+
+  def send_confirm_message({winner, score_winner}, {loser, score_loser}, _score) do
+    message = "Volgens <@#{winner.slack_id}> heb je verloren met #{score_winner}:#{score_loser}. Bevestigen?"
+
+    Chat.post_message(
+      loser.slack_id,
+      message,
+      %{
+        blocks:
+          Jason.encode!([
+            %{
+              type: "section",
+              text: %{
+                type: "plain_text",
+                text: message
+              }
+            },
+            %{
+              type: "actions",
+              elements: [
+                %{
+                  type: "button",
+                  text: %{
+                    type: "plain_text",
+                    text: "Bevestig"
+                  },
+                  style: "primary",
+                  value: "click_me_123"
+                },
+                %{
+                  type: "button",
+                  text: %{
+                    type: "plain_text",
+                    text: "Weiger"
+                  },
+                  style: "danger",
+                  value: "click_me_123"
+                }
+              ]
+            }
+          ])
+      }
+    )
   end
 end

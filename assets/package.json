@@ -1,0 +1,20 @@
+{
+  "name": "ping-pong",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "prettier": "@gkdp/prettier-config",
+  "scripts": {
+    "deploy": "NODE_ENV=production tailwindcss --postcss --minify --input=css/app.css --output=../priv/static/assets/app.css"
+  },
+  "devDependencies": {
+    "@gkdp/prettier-config": "^1.0.0",
+    "autoprefixer": "^10.3.7",
+    "postcss": "^8.3.9",
+    "prettier": "^2.4.1",
+    "tailwindcss": "^2.2.16"
+  },
+  "dependencies": {
+    "@tailwindcss/forms": "^0.3.4"
+  }
+}

@@ -21,8 +21,8 @@
   <tbody id="scores">
     <%= for score <- @scores do %>
       <tr id={"score-#{score.id}"}>
-        <td><%= score.left %></td>
-        <td><%= score.right %></td>
+        <td><%= score.left_score %></td>
+        <td><%= score.right_score %></td>
 
         <td>
           <span><%= live_redirect "Show", to: Routes.score_show_path(@socket, :show, score) %></span>

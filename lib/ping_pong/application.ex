@@ -15,9 +15,10 @@ defmodule PingPong.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: PingPong.PubSub},
       # Start the Endpoint (http/https)
-      PingPongWeb.Endpoint
+      PingPongWeb.Endpoint,
       # Start a worker by calling: PingPong.Worker.start_link(arg)
       # {PingPong.Worker, arg}
+      {Cachex, name: :slack_profiles}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

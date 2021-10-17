@@ -29,6 +29,26 @@ config :ping_pong, PingPong.Mailer, adapter: Swoosh.Adapters.Local
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
 
+# Configure Ueberauth
+config :ueberauth, Ueberauth,
+  providers: [
+    slack: {Ueberauth.Strategy.SlackV2, []}
+  ]
+
+# Configure Ueberauth for Slack
+config :ueberauth, Ueberauth.Strategy.SlackV2.OAuth,
+  client_id: System.get_env("SLACK_CLIENT_ID"),
+  client_secret: System.get_env("SLACK_CLIENT_SECRET")
+
+config :slack,
+  api_token: System.get_env("SLACK_API_TOKEN")
+  # web_http_client_opts: [
+  #   proxy: {"172.23.32.43", 9090},
+  #   ssl: [
+  #     certfile: "proxyman-key.pem"
+  #   ]
+  # ]
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.12.18",
