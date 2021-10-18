@@ -4,10 +4,12 @@ defmodule PingPong.Scoreboard do
   """
 
   import Ecto.Query, warn: false
+  import Ecto.Changeset, only: [change: 2]
   alias PingPong.Repo
 
   alias PingPong.Commands
   alias PingPong.Scoreboard.Score
+  alias PingPong.Scoreboard.ScoreWinner
   alias PingPong.Scoreboard.User
   alias Slack.Web.Chat
 
@@ -38,7 +40,10 @@ defmodule PingPong.Scoreboard do
       ** (Ecto.NoResultsError)
 
   """
-  def get_score!(id), do: Repo.get!(Score, id)
+  def get_score!(id) do
+    Repo.get!(Score, id)
+    |> Repo.preload([:left, :right])
+  end
 
   @doc """
   Creates a score.
@@ -115,7 +120,12 @@ defmodule PingPong.Scoreboard do
 
   """
   def list_users do
-    Repo.all(User)
+    from(u in User,
+      left_join: s in assoc(u, :winnings),
+      order_by: [desc: u.elo],
+      preload: [winnings: s]
+    )
+    |> Repo.all()
   end
 
   def get_user_by_slack(id) when is_binary(id) do
@@ -133,34 +143,27 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking score changes.
+  def process_score(%Commands.Report{left_id: left_id, right_id: right_id})
+      when left_id == right_id do
+    {:error, :equals}
+  end
 
-  ## Examples
-
-      iex> process_score(score)
-      %Ecto.Changeset{data: %Score{}}
-
-  """
   def process_score(%Commands.Report{} = report) do
     left = get_or_create_user_by_slack(report.left_id)
     right = get_or_create_user_by_slack(report.right_id)
 
     winner =
       cond do
-        report.left > report.right -> left
-        report.left < report.right -> right
-        # TODO: Gelijkspel
-        true -> left
+        report.left > report.right -> :left
+        report.left < report.right -> :right
+        true -> :draw
       end
-
-    loser = if left.id == winner.id, do: left, else: right
 
     changeset =
       Score.changeset(%Score{}, %{
         left_id: left.id,
         right_id: right.id,
-        winner_id: winner.id,
+        winner: winner,
         left_score: report.left,
         right_score: report.right
       })
@@ -169,10 +172,16 @@ defmodule PingPong.Scoreboard do
       changeset
       |> Repo.insert()
 
+    {winning_user, winning_score} =
+      if(winner == :left, do: {left, report.left}, else: {right, report.right})
+
+    {losing_user, losing_score} =
+      if(winner != :left, do: {left, report.left}, else: {right, report.right})
+
     with {:ok, score} = tuple <- score do
       send_confirm_message(
-        {winner, if(left.id == winner.id, do: report.left, else: report.right)},
-        {loser, if(left.id != winner.id, do: report.left, else: report.right)},
+        {winning_user, winning_score},
+        {losing_user, losing_score},
         score
       )
 
@@ -180,8 +189,31 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  def send_confirm_message({winner, score_winner}, {loser, score_loser}, _score) do
-    message = "Volgens <@#{winner.slack_id}> heb je verloren met #{score_winner}:#{score_loser}. Bevestigen?"
+  def confirm_score(%Score{winner: winner} = score) do
+    winning_user = if(winner == :left, do: score.left, else: score.right)
+    losing_user = if(winner != :left, do: score.left, else: score.right)
+
+    {winning_elo, losing_elo} = Elo.rate(winning_user.elo, losing_user.elo, :win, round: true)
+
+    Repo.transaction(fn ->
+      Repo.update!(change(winning_user, elo: winning_elo))
+      Repo.update!(change(losing_user, elo: losing_elo))
+
+      Repo.update!(
+        change(score, confirmed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+      )
+    end)
+  end
+
+  def deny_score(%Score{} = score) do
+    Repo.update!(
+      change(score, denied_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+    )
+  end
+
+  def send_confirm_message({winner, score_winner}, {loser, score_loser}, score) do
+    message =
+      "Volgens <@#{winner.slack_id}> heb je verloren met #{score_winner}:#{score_loser}. Bevestigen?"
 
     Chat.post_message(
       loser.slack_id,
@@ -192,7 +224,7 @@ defmodule PingPong.Scoreboard do
             %{
               type: "section",
               text: %{
-                type: "plain_text",
+                type: "mrkdwn",
                 text: message
               }
             },
@@ -206,7 +238,7 @@ defmodule PingPong.Scoreboard do
                     text: "Bevestig"
                   },
                   style: "primary",
-                  value: "click_me_123"
+                  value: "confirm:#{score.id}"
                 },
                 %{
                   type: "button",
@@ -215,7 +247,7 @@ defmodule PingPong.Scoreboard do
                     text: "Weiger"
                   },
                   style: "danger",
-                  value: "click_me_123"
+                  value: "deny:#{score.id}"
                 }
               ]
             }

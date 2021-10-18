@@ -19,22 +19,22 @@ defmodule PingPongWeb.CommandView do
     }
   end
 
-  def render("match.json", %{command: _command}) do
+  def render("equals.json", _) do
     %{
-      response_type: "in_channel",
-      text: "Matched."
+      response_type: "ephemeral",
+      text:
+        "Gek! Je kan niet tegen jezelf spelen! Behalve als je de Flash bent?"
     }
   end
 
-  def render("report.json", %{score: %Score{} = score}) do
-    score_winner = if score.winner_id == score.left_id, do: score.left_score, else: score.right_score
-    score_loser = if score.winner_id != score.left_id, do: score.left_score, else: score.right_score
-    loser_id = if score.winner_id == score.right_id, do: score.left.slack_id, else: score.right.slack_id
+  def render("report.json", %{score: %Score{winner: winner} = score}) do
+    {winning_user, winning_score} = if(winner == :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
+    {losing_user, losing_score} = if(winner != :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
 
     %{
       response_type: "in_channel",
       text:
-        "<@#{score.winner.slack_id}> heeft gewonnen met #{score_winner}:#{score_loser}. <@#{loser_id}> moet dit bevestigen. Dit gebeurt anders automatisch na 24 uur."
+        "<@#{winning_user.slack_id}> heeft gewonnen met #{winning_score}:#{losing_score}. <@#{losing_user.slack_id}> moet dit bevestigen. Dit gebeurt anders automatisch na 24 uur."
     }
   end
 end

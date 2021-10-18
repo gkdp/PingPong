@@ -96,5 +96,7 @@ defmodule PingPongWeb.Router do
     pipe_through [:api]
 
     post "/command", CommandController, :command
+    post "/event", EventController, :event
+    post "/event/action", EventController, :event_action
   end
 end

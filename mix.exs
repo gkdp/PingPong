@@ -54,7 +54,8 @@ defmodule PingPong.MixProject do
       {:ueberauth, "~> 0.7"},
       {:ueberauth_slack_v2, "~> 2.0"},
       {:slack, "~> 0.23.5"},
-      {:cachex, "~> 3.4"}
+      {:cachex, "~> 3.4"},
+      {:elo, "~> 0.1.0"}
     ]
   end
 

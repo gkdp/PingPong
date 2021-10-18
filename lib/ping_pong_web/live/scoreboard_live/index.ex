@@ -1,8 +1,6 @@
 defmodule PingPongWeb.ScoreboardLive.Index do
   use PingPongWeb, :live_view
 
-  import Ecto.Query
-
   alias PingPong.Scoreboard
 
   @impl true
