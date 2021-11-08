@@ -13,7 +13,9 @@ defmodule PingPongWeb.EventController do
     score = Scoreboard.get_score!(id)
 
     with %Scoreboard.Score{confirmed_at: nil, denied_at: nil} <- score do
-      Scoreboard.confirm_score(score)
+      Scoreboard.send_confirmation_message(
+        Scoreboard.confirm_score(score)
+      )
     end
 
     json =
@@ -42,7 +44,9 @@ defmodule PingPongWeb.EventController do
     score = Scoreboard.get_score!(id)
 
     with %Scoreboard.Score{confirmed_at: nil, denied_at: nil} <- score do
-      Scoreboard.deny_score(score)
+      Scoreboard.send_confirmation_message(
+        Scoreboard.deny_score(score)
+      )
     end
 
     json =

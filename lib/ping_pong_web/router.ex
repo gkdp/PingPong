@@ -61,30 +61,30 @@ defmodule PingPongWeb.Router do
   scope "/", PingPongWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    get "/users/log_in", UserSessionController, :new
-    post "/users/log_in", UserSessionController, :create
+    # get "/users/log_in", UserSessionController, :new
+    # post "/users/log_in", UserSessionController, :create
   end
 
-  scope "/auth", PingPongWeb do
-    pipe_through [:browser]
+  # scope "/auth", PingPongWeb do
+  #   pipe_through [:browser]
 
-    get "/:provider", SlackController, :request
-    get "/:provider/callback", SlackController, :callback
-  end
+  #   get "/:provider", SlackController, :request
+  #   get "/:provider/callback", SlackController, :callback
+  # end
 
   scope "/", PingPongWeb do
     pipe_through [:browser]
 
     live "/scoreboard", ScoreboardLive.Index, :index
 
-    # live "/teams", TeamLive.Index, :index
-    # live "/teams/new", TeamLive.Index, :new
+    live "/teams", TeamLive.Index, :index
+    live "/teams/new", TeamLive.Index, :new
     # live "/teams/:id/edit", TeamLive.Index, :edit
 
-    # live "/teams/:id", TeamLive.Show, :show
+    live "/teams/:id", TeamLive.Show, :show
     # live "/teams/:id/show/edit", TeamLive.Show, :edit
 
-    live "/scores", ScoreLive.Index, :index
+    # live "/scores", ScoreLive.Index, :index
     # live "/scores/new", ScoreLive.Index, :new
     # live "/scores/:id/edit", ScoreLive.Index, :edit
 

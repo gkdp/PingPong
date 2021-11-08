@@ -32,3 +32,5 @@ ping_pong-*.tar
 npm-debug.log
 /assets/node_modules/
 
+.envrc
+

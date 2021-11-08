@@ -11,6 +11,7 @@ defmodule PingPong.Scoreboard.ScoreWinner do
     belongs_to :left, User
     belongs_to :right, User
     belongs_to :won_by, User
+    belongs_to :lost_by, User
 
     field :confirmed_at, :naive_datetime
     field :denied_at, :naive_datetime

@@ -49,6 +49,11 @@ config :slack,
   #   ]
   # ]
 
+config :ping_pong, PingPong.Scheduler,
+  jobs: [
+    {"* * * * *", {PingPong.Scoreboard, :scheduled_confirm, []}}
+  ]
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.12.18",

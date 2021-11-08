@@ -3,6 +3,8 @@ defmodule PingPong.Scoreboard do
   The Scoreboard context.
   """
 
+  require Logger
+
   import Ecto.Query, warn: false
   import Ecto.Changeset, only: [change: 2]
   alias PingPong.Repo
@@ -10,6 +12,7 @@ defmodule PingPong.Scoreboard do
   alias PingPong.Commands
   alias PingPong.Scoreboard.Score
   alias PingPong.Scoreboard.ScoreWinner
+  alias PingPong.Scoreboard.EloHistory
   alias PingPong.Scoreboard.User
   alias Slack.Web.Chat
 
@@ -64,53 +67,6 @@ defmodule PingPong.Scoreboard do
   end
 
   @doc """
-  Updates a score.
-
-  ## Examples
-
-      iex> update_score(score, %{field: new_value})
-      {:ok, %Score{}}
-
-      iex> update_score(score, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_score(%Score{} = score, attrs) do
-    score
-    |> Score.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a score.
-
-  ## Examples
-
-      iex> delete_score(score)
-      {:ok, %Score{}}
-
-      iex> delete_score(score)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_score(%Score{} = score) do
-    Repo.delete(score)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking score changes.
-
-  ## Examples
-
-      iex> change_score(score)
-      %Ecto.Changeset{data: %Score{}}
-
-  """
-  def change_score(%Score{} = score, attrs \\ %{}) do
-    Score.changeset(score, attrs)
-  end
-
-  @doc """
   Returns the list of users.
 
   ## Examples
@@ -121,11 +77,13 @@ defmodule PingPong.Scoreboard do
   """
   def list_users do
     from(u in User,
-      left_join: s in assoc(u, :winnings),
-      order_by: [desc: u.elo],
-      preload: [winnings: s]
+      order_by: [desc: u.elo]
     )
     |> Repo.all()
+    |> Repo.preload(
+      winnings: from(c in ScoreWinner, where: not is_nil(c.confirmed_at)),
+      losses: from(c in ScoreWinner, where: not is_nil(c.confirmed_at))
+    )
   end
 
   def get_user_by_slack(id) when is_binary(id) do
@@ -133,13 +91,20 @@ defmodule PingPong.Scoreboard do
   end
 
   def get_or_create_user_by_slack(id) when is_binary(id) do
-    with nil <- get_user_by_slack(id) do
-      %User{
-        slack_id: id
-      }
-      |> Repo.insert!()
+    with nil <- get_user_by_slack(id),
+         %{"ok" => true, "user" => info} <- Slack.Web.Users.info(id),
+         false <- Map.get(info, "is_bot") do
+      user =
+        %User{
+          slack_id: id
+        }
+        |> Repo.insert!()
+        |> Map.put(:winnings, [])
+
+      {:ok, user}
     else
-      user -> user
+      %User{} = user -> {:ok, user}
+      _ -> {:error, nil}
     end
   end
 
@@ -149,9 +114,15 @@ defmodule PingPong.Scoreboard do
   end
 
   def process_score(%Commands.Report{} = report) do
-    left = get_or_create_user_by_slack(report.left_id)
-    right = get_or_create_user_by_slack(report.right_id)
+    with {:ok, left} <- get_or_create_user_by_slack(report.left_id),
+         {:ok, right} <- get_or_create_user_by_slack(report.right_id) do
+      do_score(left, right, report)
+    else
+      _ -> {:error, nil}
+    end
+  end
 
+  defp do_score(left, right, %Commands.Report{} = report) do
     winner =
       cond do
         report.left > report.right -> :left
@@ -182,6 +153,7 @@ defmodule PingPong.Scoreboard do
       send_confirm_message(
         {winning_user, winning_score},
         {losing_user, losing_score},
+        right,
         score
       )
 
@@ -193,16 +165,41 @@ defmodule PingPong.Scoreboard do
     winning_user = if(winner == :left, do: score.left, else: score.right)
     losing_user = if(winner != :left, do: score.left, else: score.right)
 
-    {winning_elo, losing_elo} = Elo.rate(winning_user.elo, losing_user.elo, :win, round: true)
+    wins =
+      Repo.aggregate(
+        from(s in ScoreWinner,
+          where: not is_nil(s.confirmed_at) and s.won_by_id == ^winning_user.id
+        ),
+        :count
+      )
+
+    {winning_elo, losing_elo} =
+      Elo.rate(
+        winning_user.elo,
+        losing_user.elo,
+        :win,
+        round: true,
+        k_factor: get_k_factor(wins, winning_user.elo)
+      )
+
+    time = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     Repo.transaction(fn ->
       Repo.update!(change(winning_user, elo: winning_elo))
       Repo.update!(change(losing_user, elo: losing_elo))
 
-      Repo.update!(
-        change(score, confirmed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+      Repo.insert!(
+        change(%EloHistory{}, %{user_id: winning_user.id, score_id: score.id, elo: winning_elo})
       )
+
+      Repo.insert!(
+        change(%EloHistory{}, %{user_id: losing_user.id, score_id: score.id, elo: losing_elo})
+      )
+
+      Repo.update!(change(score, confirmed_at: time))
     end)
+
+    %Score{score | confirmed_at: time}
   end
 
   def deny_score(%Score{} = score) do
@@ -211,12 +208,16 @@ defmodule PingPong.Scoreboard do
     )
   end
 
-  def send_confirm_message({winner, score_winner}, {loser, score_loser}, score) do
+  def send_confirm_message({winner, score_winner}, {loser, score_loser}, right, score) do
     message =
-      "Volgens <@#{winner.slack_id}> heb je verloren met #{score_winner}:#{score_loser}. Bevestigen?"
+      if winner.id == right.id do
+        "Volgens <@#{loser.slack_id}> heb je gewonnen met #{score_winner}:#{score_loser}. Bevestigen?"
+      else
+        "Volgens <@#{winner.slack_id}> heb je verloren met #{score_winner}:#{score_loser}. Bevestigen?"
+      end
 
     Chat.post_message(
-      loser.slack_id,
+      right.slack_id,
       message,
       %{
         blocks:
@@ -254,5 +255,42 @@ defmodule PingPong.Scoreboard do
           ])
       }
     )
+  end
+
+  def send_confirmation_message(%Score{confirmed_at: time} = score) when not is_nil(time) do
+    Chat.post_message(
+      score.left.slack_id,
+      "<@#{score.right.slack_id}> heeft de score #{score.left_score}:#{score.right_score} bevestigd."
+    )
+  end
+
+  def send_confirmation_message(%Score{denied_at: time} = score) when not is_nil(time) do
+    Chat.post_message(
+      score.left.slack_id,
+      "<@#{score.right.slack_id}> heeft de score #{score.left_score}:#{score.right_score} geweigerd."
+    )
+  end
+
+  def scheduled_confirm do
+    scores =
+      from(s in Score,
+        where: s.inserted_at <= ago(1, "day") and is_nil(s.confirmed_at) and is_nil(s.denied_at)
+      )
+      |> Repo.all()
+      |> Repo.preload([:left, :right])
+
+    for score <- scores do
+      Logger.info("Auto confirm score", score_id: score.id)
+
+      send_confirmation_message(confirm_score(score))
+    end
+  end
+
+  defp get_k_factor(wins, elo) do
+    cond do
+      wins <= 10 -> 60
+      elo >= 2000 -> 10
+      true -> 25
+    end
   end
 end

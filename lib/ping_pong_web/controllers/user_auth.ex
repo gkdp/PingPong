@@ -3,7 +3,7 @@ defmodule PingPongWeb.UserAuth do
   import Phoenix.Controller
 
   alias PingPong.Accounts
-  alias PingPongWeb.Router.Helpers, as: Routes
+  # alias PingPongWeb.Router.Helpers, as: Routes
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change

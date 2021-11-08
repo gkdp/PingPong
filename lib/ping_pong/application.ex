@@ -18,7 +18,8 @@ defmodule PingPong.Application do
       PingPongWeb.Endpoint,
       # Start a worker by calling: PingPong.Worker.start_link(arg)
       # {PingPong.Worker, arg}
-      {Cachex, name: :slack_profiles}
+      {Cachex, name: :slack_profiles},
+      PingPong.Scheduler
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
