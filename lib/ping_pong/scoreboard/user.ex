@@ -56,7 +56,7 @@ defmodule PingPong.Scoreboard.User do
             IO.inspect("Failed getting Slack info")
             IO.inspect(e)
 
-            {:ignore, nil}
+            {:commit, :not_found}
         end
       end)
 
@@ -64,5 +64,9 @@ defmodule PingPong.Scoreboard.User do
         %{"profile" => %{"real_name" => name}} -> name
         _ -> "Naam niet bekend"
       end
+  end
+
+  def get_slack_name_short(%__MODULE__{} = user) do
+    List.first(String.split(get_slack_name(user)), "Anoniem")
   end
 end

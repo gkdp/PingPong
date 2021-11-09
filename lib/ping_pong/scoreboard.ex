@@ -76,13 +76,24 @@ defmodule PingPong.Scoreboard do
 
   """
   def list_users do
+    ranking_query =
+      from c in EloHistory,
+      select: %{id: c.id, row_number: over(row_number(), :users_partition)},
+      windows: [users_partition: [partition_by: :user_id, order_by: :inserted_at]]
+
+    history_query =
+      from c in EloHistory,
+      join: r in subquery(ranking_query),
+      on: c.id == r.id and r.row_number <= 10
+
     from(u in User,
       order_by: [desc: u.elo]
     )
     |> Repo.all()
     |> Repo.preload(
       winnings: from(c in ScoreWinner, where: not is_nil(c.confirmed_at)),
-      losses: from(c in ScoreWinner, where: not is_nil(c.confirmed_at))
+      losses: from(c in ScoreWinner, where: not is_nil(c.confirmed_at)),
+      elo_history: history_query
     )
   end
 

@@ -4,7 +4,8 @@
 
 @tailwind utilities;
 
-body, html {
+body,
+html {
   direction: ltr;
   height: 100%;
 }
@@ -23,4 +24,41 @@ body > div,
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.form-checkbox {
+  border-color: #d1d5db;
+  border-width: 1px;
+  border-radius: 0.25rem;
+}
+
+.sparkline.absolute {
+  left: 50%;
+  transform: translate(-50%, 0);
+  bottom: 0;
+}
+
+.sparkline {
+  stroke: rgb(157 204 255);
+  fill: rgba(27, 83, 163, 0.3);
+}
+
+/* change the spot color */
+.sparkline--spot {
+  stroke: blue;
+  fill: blue;
+}
+
+/* change the cursor color */
+.sparkline--cursor {
+  stroke: orange;
+}
+
+/* style fill area and line colors using specific class name */
+.sparkline--fill {
+  fill: rgb(226 240 255);
 }
