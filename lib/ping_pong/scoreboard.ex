@@ -79,12 +79,13 @@ defmodule PingPong.Scoreboard do
     ranking_query =
       from c in EloHistory,
       select: %{id: c.id, row_number: over(row_number(), :users_partition)},
-      windows: [users_partition: [partition_by: :user_id, order_by: :inserted_at]]
+      windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
 
     history_query =
       from c in EloHistory,
       join: r in subquery(ranking_query),
-      on: c.id == r.id and r.row_number <= 10
+      on: c.id == r.id and r.row_number <= 10,
+      order_by: :inserted_at
 
     from(u in User,
       order_by: [desc: u.elo]

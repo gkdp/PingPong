@@ -36,7 +36,7 @@ body > div,
   border-radius: 0.25rem;
 }
 
-.sparkline.absolute {
+.sparkline-container.absolute {
   left: 50%;
   transform: translate(-50%, 0);
   bottom: 0;
@@ -61,4 +61,15 @@ body > div,
 /* style fill area and line colors using specific class name */
 .sparkline--fill {
   fill: rgb(226 240 255);
+}
+
+.tooltip {
+  position: absolute;
+    background: rgb(145 150 155);
+    border-radius: 0.25rem;
+    color: #fff;
+    padding: 2px 5px;
+    font-size: 10px;
+    white-space: nowrap;
+    z-index: 9999;
 }

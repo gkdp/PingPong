@@ -34,16 +34,47 @@ let csrfToken = document
 let liveSocket = new LiveSocket('/live', Socket, {
   params: { _csrf_token: csrfToken },
   dom: {
-    onBeforeElUpdated(from, to){
-      if(from._x_dataStack){
-        window.Alpine.clone(from, to);
+    onBeforeElUpdated(from, to) {
+      if (from._x_dataStack) {
+        window.Alpine.clone(from, to)
       }
-    }
+    },
   },
 })
 
+function findClosest(target, tagName) {
+  if (target.tagName === tagName) {
+    return target
+  }
+
+  while ((target = target.parentNode)) {
+    if (target.tagName === tagName) {
+      break
+    }
+  }
+
+  return target
+}
+
 Alpine.directive('sparkline', (el, { expression }, { evaluate }) => {
-  sparkline(el, evaluate(expression))
+  sparkline(el, evaluate(expression), {
+    onmousemove(event, datapoint) {
+      var svg = findClosest(event.target, 'svg')
+      var tooltip = svg.parentNode.parentNode.nextElementSibling
+
+      tooltip.hidden = false
+      tooltip.textContent = `${datapoint.original} ELO`
+      tooltip.style.top = `${event.clientY}px`
+      tooltip.style.left = `${event.clientX + 20}px`
+    },
+
+    onmouseout() {
+      var svg = findClosest(event.target, 'svg')
+      var tooltip = svg.parentNode.parentNode.nextElementSibling
+
+      tooltip.hidden = true
+    },
+  })
 })
 
 // Show progress bar on live navigation and form submits
