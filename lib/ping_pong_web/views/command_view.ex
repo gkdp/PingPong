@@ -73,6 +73,29 @@ defmodule PingPongWeb.CommandView do
     }
   end
 
+  def render("report.json", %{scores: scores}) do
+    won_by =
+      scores
+      |> Enum.map(fn score ->
+        user = if score.winner == :left, do: score.left, else: score.right
+        text = if score.winner == :left, do: "*#{score.left_score}:#{score.right_score}*", else: "*#{score.right_score}:#{score.left_score}*"
+
+        {user, text}
+      end)
+      |> Enum.group_by(fn {user, _} -> user end, fn {_, text} -> text end)
+
+    text =
+      for {user, scores} <- won_by, reduce: "" do
+        acc ->
+          acc <> "<@#{user.slack_id}> heeft gewonnen met #{Enum.join(scores, ", ")}. "
+      end
+
+    %{
+      response_type: "in_channel",
+      text: text
+    }
+  end
+
   def render("report.json", %{score: %Score{winner: winner} = score}) do
     {winning_user, winning_score} = if(winner == :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
     {_losing_user, losing_score} = if(winner != :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})

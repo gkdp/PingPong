@@ -6,8 +6,11 @@ defmodule PingPong.Commands do
     embedded_schema do
       field :left_id, :string
       field :right_id, :string
-      field :left, :integer
-      field :right, :integer
+
+      embeds_many :scores, Score do
+        field :left, :integer
+        field :right, :integer
+      end
     end
   end
 end

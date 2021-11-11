@@ -1,7 +1,8 @@
 module.exports = {
-  // mode: 'jit',
-  // purge: ['./js/**/*.js', '../lib/*_web/**/*.*ex'],
+  mode: 'jit',
+  purge: ['./js/**/*.js', '../lib/*_web/**/*.*ex'],
   darkMode: false,
+  // darkMode: 'media',
   theme: {},
   variants: {},
   plugins: [

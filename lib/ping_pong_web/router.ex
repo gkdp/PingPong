@@ -1,8 +1,6 @@
 defmodule PingPongWeb.Router do
   use PingPongWeb, :router
 
-  import PingPongWeb.UserAuth
-
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -10,7 +8,6 @@ defmodule PingPongWeb.Router do
     plug :put_root_layout, {PingPongWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_current_user
   end
 
   pipeline :api do
@@ -76,26 +73,19 @@ defmodule PingPongWeb.Router do
     pipe_through [:browser]
 
     live "/scoreboard", ScoreboardLive.Index, :index
+    live "/scoreboard/:id", ScoreboardLive.Competition, :index
 
     live "/teams", TeamLive.Index, :index
     live "/teams/new", TeamLive.Index, :new
-    # live "/teams/:id/edit", TeamLive.Index, :edit
 
     live "/teams/:id", TeamLive.Show, :show
-    # live "/teams/:id/show/edit", TeamLive.Show, :edit
-
-    # live "/scores", ScoreLive.Index, :index
-    # live "/scores/new", ScoreLive.Index, :new
-    # live "/scores/:id/edit", ScoreLive.Index, :edit
-
-    # live "/scores/:id", ScoreLive.Show, :show
-    # live "/scores/:id/show/edit", ScoreLive.Show, :edit
   end
 
   scope "/slack", PingPongWeb do
     pipe_through [:api]
 
     post "/command", CommandController, :command
+
     post "/event", EventController, :event
     post "/event/action", EventController, :event_action
   end

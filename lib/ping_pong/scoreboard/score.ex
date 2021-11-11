@@ -3,12 +3,14 @@ defmodule PingPong.Scoreboard.Score do
   import Ecto.Changeset
 
   alias PingPong.Scoreboard.User
+  alias PingPong.Competitions.Competition
 
   schema "scores" do
     field :left_score, :integer
     field :right_score, :integer
     field :winner, Ecto.Enum, values: [:left, :right, :draw]
 
+    belongs_to :competition, Competition
     belongs_to :left, User
     belongs_to :right, User
 

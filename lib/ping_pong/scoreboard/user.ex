@@ -4,6 +4,8 @@ defmodule PingPong.Scoreboard.User do
 
   alias PingPong.Scoreboard.ScoreWinner
   alias PingPong.Scoreboard.EloHistory
+  alias PingPong.Competitions.CompetitionUser
+  alias PingPong.Teams.Team
 
   schema "users" do
     field :slack_id, :string
@@ -14,6 +16,9 @@ defmodule PingPong.Scoreboard.User do
     has_many :winnings, ScoreWinner, foreign_key: :won_by_id
     has_many :losses, ScoreWinner, foreign_key: :lost_by_id
     has_many :elo_history, EloHistory
+
+    has_many :user_competitions, CompetitionUser
+    many_to_many :teams, Team, join_through: "team_user"
 
     field :winnings_count, :integer, virtual: true
     field :losses_count, :integer, virtual: true

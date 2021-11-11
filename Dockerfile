@@ -29,6 +29,8 @@ RUN mix deps.compile
 
 COPY priv priv
 
+COPY lib lib
+
 # note: if your project uses a tool like https://purgecss.com/,
 # which customizes asset compilation based on what it finds in
 # your Elixir templates, you will need to move the asset compilation
@@ -37,7 +39,6 @@ COPY assets assets
 RUN mix assets.deploy
 
 # compile and build the release
-COPY lib lib
 RUN mix compile
 # changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/

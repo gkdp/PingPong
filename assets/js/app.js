@@ -64,8 +64,8 @@ Alpine.directive('sparkline', (el, { expression }, { evaluate }) => {
 
       tooltip.hidden = false
       tooltip.textContent = `${datapoint.original} ELO`
-      tooltip.style.top = `${event.clientY}px`
-      tooltip.style.left = `${event.clientX + 20}px`
+      tooltip.style.top = `${event.pageY}px`
+      tooltip.style.left = `${event.pageX + 20}px`
     },
 
     onmouseout() {

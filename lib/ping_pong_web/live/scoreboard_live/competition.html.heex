@@ -1,0 +1,54 @@
+<div class="py-8 h-full">
+  <div class="ping-pong w-full" style="min-height: 0px;">
+    <div class="container mx-auto mb-6">
+      <div class="sm:w-1/2 mx-auto bg-white dark:bg-gray-700 dark:text-white px-6 pt-4 pb-4 sm:rounded">
+        <div class="text-lg font-bold mb-2">
+          Tafeltennis competitie '<%= @competition.title %>'
+        </div>
+
+        <p>
+          Er <%= if length(@users) == 1, do: "is", else: "zijn" %>
+          <span class="font-semibold"><%= length(@users) %></span> deelnemende
+          <%= if length(@users) == 1, do: "speler", else: "spelers" %> die <%= if length(@users) == 1, do: "bestaat", else: "bestaan" %>
+          uit <%= format_team_names(@teams) %>.
+
+          De competitie is gestart op <span class="font-semibold"><%= @competition.start_at || "Onbekend" %></span>
+          en eindigt op <span class="font-semibold"><%= @competition.end_at || "Onbekend" %></span>.
+          Nog 5 dagen te gaan!
+        </p>
+
+        <p class="mt-4">
+          Jurre is op dit moment aan het winnen! Dennis, jij maakt de meeste kans om van Jurre te winnen, grijp je kans!
+        </p>
+      </div>
+    </div>
+
+    <div class="w-full bg-white dark:bg-gray-700">
+      <div class="container mx-auto">
+        <div class="grid gap-y-4 sm:w-1/2 mx-auto py-6 px-2 sm:px-0">
+          <div class="grid grid-cols-8 items-center text-gray-400 dark:text-gray-300 font-bold">
+            <div class="text-center">
+              #
+            </div>
+            <div class="col-span-4 px-3">
+              Naam
+            </div>
+            <div class="text-center">
+              Score
+            </div>
+            <div class="text-center">
+              <span title="Gewonnen">W</span>
+            </div>
+            <div class="text-center">
+              <span title="Verloren">L</span>
+            </div>
+          </div>
+
+          <%= for {user, index} <- Enum.with_index(@users) do %>
+            <PingPongWeb.ScoreboardLive.Components.user user={user} position={index + 1} show={nil} lowest_elo={@lowest_elo} show_teams={true} />
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

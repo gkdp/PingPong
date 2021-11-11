@@ -10,6 +10,7 @@ defmodule PingPong.Scoreboard do
   alias PingPong.Repo
 
   alias PingPong.Commands
+  alias PingPong.Commands.Report
   alias PingPong.Scoreboard.Score
   alias PingPong.Scoreboard.ScoreWinner
   alias PingPong.Scoreboard.EloHistory
@@ -78,22 +79,24 @@ defmodule PingPong.Scoreboard do
   def list_users do
     ranking_query =
       from c in EloHistory,
-      select: %{id: c.id, row_number: over(row_number(), :users_partition)},
-      windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
+        select: %{id: c.id, row_number: over(row_number(), :users_partition)},
+        windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
 
     history_query =
       from c in EloHistory,
-      join: r in subquery(ranking_query),
-      on: c.id == r.id and r.row_number <= 10,
-      order_by: :inserted_at
+        join: r in subquery(ranking_query),
+        on: c.id == r.id and r.row_number <= 10,
+        order_by: :inserted_at
 
     from(u in User,
       order_by: [desc: u.elo]
     )
     |> Repo.all()
     |> Repo.preload(
-      winnings: from(c in ScoreWinner, where: not is_nil(c.confirmed_at)),
-      losses: from(c in ScoreWinner, where: not is_nil(c.confirmed_at)),
+      winnings:
+        from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.competition_id)),
+      losses:
+        from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.competition_id)),
       elo_history: history_query
     )
   end
@@ -120,25 +123,48 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  def process_score(%Commands.Report{left_id: left_id, right_id: right_id})
-      when left_id == right_id do
-    {:error, :equals}
-  end
+  # def process_score(%Commands.Report{left_id: left_id, right_id: right_id})
+  #     when left_id == right_id do
+  #   {:error, :equals}
+  # end
 
-  def process_score(%Commands.Report{} = report) do
+  # def process_score(%Commands.Report{} = report) do
+  #   with {:ok, left} <- get_or_create_user_by_slack(report.left_id),
+  #        {:ok, right} <- get_or_create_user_by_slack(report.right_id) do
+  #     do_score(left, right, report)
+  #   else
+  #     _ -> {:error, nil}
+  #   end
+  # end
+
+  # def process_scores(%Report{left_id: left_id, right_id: right_id})
+  #     when left_id == right_id do
+  #   {:error, :equals}
+  # end
+
+  def process_scores(%Report{} = report) do
     with {:ok, left} <- get_or_create_user_by_slack(report.left_id),
          {:ok, right} <- get_or_create_user_by_slack(report.right_id) do
-      do_score(left, right, report)
+      processed =
+        for %Report.Score{} = score <- report.scores do
+          with {:ok, final} <- do_score(left, right, score) do
+            final
+          else
+            _ -> nil
+          end
+        end
+
+      {:ok, Enum.filter(processed, &!is_nil(&1))}
     else
       _ -> {:error, nil}
     end
   end
 
-  defp do_score(left, right, %Commands.Report{} = report) do
+  defp do_score(left, right, %Report.Score{} = score) do
     winner =
       cond do
-        report.left > report.right -> :left
-        report.left < report.right -> :right
+        score.left > score.right -> :left
+        score.left < score.right -> :right
         true -> :draw
       end
 
@@ -147,26 +173,26 @@ defmodule PingPong.Scoreboard do
         left_id: left.id,
         right_id: right.id,
         winner: winner,
-        left_score: report.left,
-        right_score: report.right
+        left_score: score.left,
+        right_score: score.right
       })
 
-    score =
+    inserted_score =
       changeset
       |> Repo.insert()
 
     {winning_user, winning_score} =
-      if(winner == :left, do: {left, report.left}, else: {right, report.right})
+      if(winner == :left, do: {left, score.left}, else: {right, score.right})
 
     {losing_user, losing_score} =
-      if(winner != :left, do: {left, report.left}, else: {right, report.right})
+      if(winner != :left, do: {left, score.left}, else: {right, score.right})
 
-    with {:ok, score} = tuple <- score do
+    with {:ok, final_score} = tuple <- inserted_score do
       send_confirm_message(
         {winning_user, winning_score},
         {losing_user, losing_score},
         right,
-        score
+        final_score
       )
 
       tuple

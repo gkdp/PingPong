@@ -3,9 +3,9 @@ defmodule PingPong.Repo.Migrations.CreateTeams do
 
   def change do
     create table(:teams) do
-      add :slack_channel_id, :string
-      add :slack_bot_id, :string
       add :name, :string
+
+      add :parent_id, references(:teams), null: true
 
       timestamps()
     end
