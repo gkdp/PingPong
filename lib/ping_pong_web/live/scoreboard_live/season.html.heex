@@ -1,0 +1,86 @@
+<div class="py-8 h-full">
+  <div class="ping-pong w-full" style="min-height: 0px;">
+    <div class="container mx-auto mb-6">
+      <div class="sm:w-1/2 mx-auto bg-white dark:bg-gray-700 dark:text-white px-6 pt-4 pb-4 sm:rounded">
+        <div class="flex">
+          <div class="text-lg font-bold mb-2">
+            Tafeltennis seizoen '<%= @season.title %>'
+          </div>
+        </div>
+
+        <p>
+          <%= raw ngettext "Er is %{users} deelnemende speler die bestaat uit %{teams}.",
+            "Er zijn %{users} deelnemende spelers die bestaan uit %{teams}.",
+            length(@season.season_users),
+            users: "<span class=\"font-semibold\">#{length(@season.users)}</span>",
+            teams: format_team_names(@teams)
+          %>
+
+          Het seizoen is gestart op <span class="font-semibold"><%= if !is_nil(@season.start_at), do: Timex.format!(@season.start_at, "%d-%m-%Y", :strftime), else: "Onbekend" %></span>
+          en <%= if !is_nil(@season.end_at), do: raw("eindigt op <span class=\"font-semibold\">#{Timex.format!(@season.end_at, "%d-%m-%Y", :strftime)}</span>."), else: "heeft nog geen einddatum." %>
+        </p>
+
+        <p class="mt-4 hidden">
+          - is op dit moment aan het winnen! -, jij maakt de meeste kans om van Jurre te winnen, grijp je kans!
+        </p>
+      </div>
+
+      <div class="sm:w-1/2 mx-auto bg-white dark:bg-gray-700 dark:text-white px-6 pt-4 pb-4 sm:rounded mt-4 hidden" x-data="{ expanded: false }">
+        <div class="flex items-center" @click="expanded = ! expanded">
+          <svg focusable="false" class="svg-inline--fa fa-filter w-4 mr-2" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <path fill="currentColor" d="M504.6 84.19L320 306.8v149.2c0 19.52-21.97 30.7-37.75 19.66l-80-55.98C195.8 415.2 192 407.8 192 400V306.8L7.375 84.19C-9.965 63.28 5.213 32 32.7 32h446.6C506.8 32 521.1 63.28 504.6 84.19z"></path>
+          </svg>
+
+          <span class="text-sm">
+            Filter spelers
+          </span>
+
+          <.form let={f} for={@changeset} as="scores" phx-change="validate" class="hidden">
+            <label class="flex items-center">
+              <span class="mr-2 text-sm text-gray-600">Verberg spelers zonder scores</span>
+              <%= checkbox f, :hide, class: "form-checkbox" %>
+            </label>
+          </.form>
+
+          <label class="hidden">
+            <span class="text-gray-700">Bekijk per team</span>
+            <select class="form-select mt-1 block w-full">
+              <option>$1,000</option>
+              <option>$5,000</option>
+              <option>$10,000</option>
+              <option>$25,000</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full bg-white dark:bg-gray-700">
+      <div class="container mx-auto">
+        <div class="grid gap-y-4 sm:w-1/2 mx-auto py-6 px-2 sm:px-0">
+          <div class="grid grid-cols-8 items-center text-gray-400 dark:text-gray-300 font-bold">
+            <div class="text-center">
+              #
+            </div>
+            <div class="col-span-4 px-3">
+              Naam
+            </div>
+            <div class="text-center">
+              Score
+            </div>
+            <div class="text-center">
+              <span title="Gewonnen">W</span>
+            </div>
+            <div class="text-center">
+              <span title="Verloren">L</span>
+            </div>
+          </div>
+
+          <%= for {user, position} <- Enum.with_index(@season.season_users, 1) do %>
+            <PingPongWeb.ScoreboardLive.Components.user_row user={user} position={position} lowest_elo={@lowest_elo} show_teams={true} />
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

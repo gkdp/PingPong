@@ -2,26 +2,16 @@ defmodule PingPong.Scoreboard.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias PingPong.Scoreboard.ScoreWinner
-  alias PingPong.Scoreboard.EloHistory
-  alias PingPong.Competitions.CompetitionUser
+  alias PingPong.Seasons.SeasonUser
   alias PingPong.Teams.Team
 
   schema "users" do
     field :slack_id, :string
     field :name, :string
-    field :email, :string
-    field :elo, :integer, default: 1000
 
-    has_many :winnings, ScoreWinner, foreign_key: :won_by_id
-    has_many :losses, ScoreWinner, foreign_key: :lost_by_id
-    has_many :elo_history, EloHistory
-
-    has_many :user_competitions, CompetitionUser
+    has_one :season_user, SeasonUser
+    has_many :season_users, SeasonUser
     many_to_many :teams, Team, join_through: "team_user"
-
-    field :winnings_count, :integer, virtual: true
-    field :losses_count, :integer, virtual: true
 
     timestamps()
   end
@@ -65,10 +55,10 @@ defmodule PingPong.Scoreboard.User do
         end
       end)
 
-      case user do
-        %{"profile" => %{"real_name" => name}} -> name
-        _ -> "Naam niet bekend"
-      end
+    case user do
+      %{"profile" => %{"real_name" => name}} -> name
+      _ -> "Naam niet bekend"
+    end
   end
 
   def get_slack_name_short(%__MODULE__{} = user) do

@@ -3,9 +3,8 @@ defmodule PingPong.Repo.Migrations.CreateScoreHistory do
 
   def change do
     create table(:elo_history) do
-      add :user_id, references(:users), null: false
       add :score_id, references(:scores), null: false
-      add :competition_id, references(:competitions), null: true
+      add :season_user_id, references(:seasons), null: false
 
       add :elo, :integer, default: 1000, null: false
 

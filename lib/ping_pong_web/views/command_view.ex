@@ -1,23 +1,7 @@
 defmodule PingPongWeb.CommandView do
   use PingPongWeb, :view
-  alias PingPongWeb.CommandView
 
-  alias PingPong.Scoreboard.Score
-
-  def render("index.json", %{commands: commands}) do
-    %{data: render_many(commands, CommandView, "command.json")}
-  end
-
-  def render("show.json", %{command: command}) do
-    %{data: render_one(command, CommandView, "command.json")}
-  end
-
-  def render("command.json", %{command: command}) do
-    %{
-      id: command.id,
-      response_type: command.response_type
-    }
-  end
+  alias PingPong.Scores.Score
 
   def render("personal_score.json", %{elo: elo}) do
     %{
@@ -40,6 +24,14 @@ defmodule PingPongWeb.CommandView do
       response_type: "ephemeral",
       text:
         "Gek! Je kan niet tegen jezelf spelen! Behalve als je de Flash bent?"
+    }
+  end
+
+  def render("season_not_found.json", _) do
+    %{
+      response_type: "ephemeral",
+      text:
+        "Er is op dit moment geen seizoen aan de gang."
     }
   end
 
@@ -87,7 +79,7 @@ defmodule PingPongWeb.CommandView do
     text =
       for {user, scores} <- won_by, reduce: "" do
         acc ->
-          acc <> "<@#{user.slack_id}> heeft gewonnen met #{Enum.join(scores, ", ")}. "
+          acc <> "<@#{user.user.slack_id}> heeft gewonnen met #{Enum.join(scores, ", ")}. "
       end
 
     %{
@@ -96,14 +88,14 @@ defmodule PingPongWeb.CommandView do
     }
   end
 
-  def render("report.json", %{score: %Score{winner: winner} = score}) do
-    {winning_user, winning_score} = if(winner == :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
-    {_losing_user, losing_score} = if(winner != :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
+  # def render("report.json", %{score: %Score{winner: winner} = score}) do
+  #   {winning_user, winning_score} = if(winner == :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
+  #   {_losing_user, losing_score} = if(winner != :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
 
-    %{
-      response_type: "in_channel",
-      text:
-        "<@#{winning_user.slack_id}> heeft gewonnen met #{winning_score}:#{losing_score}. <@#{score.right.slack_id}> moet dit bevestigen. Dit gebeurt anders automatisch na 24 uur."
-    }
-  end
+  #   %{
+  #     response_type: "in_channel",
+  #     text:
+  #       "<@#{winning_user.user.slack_id}> heeft gewonnen met #{winning_score}:#{losing_score}. <@#{score.right.slack_id}> moet dit bevestigen. Dit gebeurt anders automatisch na 24 uur."
+  #   }
+  # end
 end

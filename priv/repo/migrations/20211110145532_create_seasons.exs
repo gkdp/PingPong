@@ -1,8 +1,8 @@
-defmodule PingPong.Repo.Migrations.CreateCompetitions do
+defmodule PingPong.Repo.Migrations.CreateSeasons do
   use Ecto.Migration
 
   def change do
-    create table(:competitions) do
+    create table(:seasons) do
       add :title, :string
       add :description, :text
       add :start_at, :naive_datetime

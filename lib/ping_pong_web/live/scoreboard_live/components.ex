@@ -1,9 +1,10 @@
 defmodule PingPongWeb.ScoreboardLive.Components do
   use Phoenix.Component
 
+  alias PingPong.Seasons.SeasonUser
   alias PingPong.Scoreboard.User
 
-  def user(%{user: %User{} = user} = assigns) do
+  def user_row(%{user: %SeasonUser{user: user} = season_user} = assigns) do
     ~H"""
     <div class="grid grid-cols-8 rounded items-center">
       <div class="text-center">
@@ -17,26 +18,26 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         <% end %>
       </div>
       <div class="text-center relative rounded overflow-hidden">
-        <p class="relative font-semibold dark:text-white text-md z-10 text-shadow pointer-events-none"><%= user.elo %></p>
+        <p class="relative font-semibold dark:text-white text-md z-10 text-shadow pointer-events-none"><%= season_user.elo %></p>
 
         <div class="sparkline-container absolute">
-          <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(user, @lowest_elo)}]"} />
+          <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(season_user, @lowest_elo)}]"} />
         </div>
       </div>
       <span class="tooltip" hidden="true"></span>
       <div class="text-center">
-        <p class="text-md font-semibold dark:text-white"><%= Enum.count(user.winnings) %></p>
+        <p class="text-md font-semibold dark:text-white"><%= Enum.count(season_user.winnings) %></p>
       </div>
       <div class="text-center">
-        <p class="text-md font-semibold dark:text-white"><%= Enum.count(user.losses) %></p>
+        <p class="text-md font-semibold dark:text-white"><%= Enum.count(season_user.losses) %></p>
       </div>
     </div>
     """
   end
 
-  defp get_values(user, lowest_elo) do
+  defp get_values(season_user, lowest_elo) do
     values =
-      for %{elo: elo, inserted_at: date} <- user.elo_history do
+      for %{elo: elo, inserted_at: date} <- season_user.elo_history do
         "{date: \"#{date}\", original: #{elo}, value: #{elo - lowest_elo}}"
       end
 

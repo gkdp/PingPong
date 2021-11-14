@@ -3,6 +3,8 @@ defmodule PingPongWeb.CommandController do
 
   alias PingPong.Commands.Report
   alias PingPong.Scoreboard
+  alias PingPong.Seasons.Season
+  alias PingPong.Seasons
 
   action_fallback PingPongWeb.FallbackController
 
@@ -10,34 +12,27 @@ defmodule PingPongWeb.CommandController do
     with %Report{} = report <- report(text, params) do
       with {:ok, scores} <- Scoreboard.process_scores(report) do
         conn
-        |> render("report.json", scores: PingPong.Repo.preload(scores, [:left, :right]))
+        |> render("report.json",
+          scores: PingPong.Repo.preload(scores, left: [:user], right: [:user])
+        )
       else
         {:error, :equals} ->
+          IO.inspect 789
           conn
           |> render("equals.json")
 
+        {:error, :season_not_found} ->
+          IO.inspect 345
+          conn
+          |> render("season_not_found.json")
+
         _ ->
+          IO.inspect 567
           conn
           |> render("error.json")
       end
     end
   end
-
-  # def command(conn, %{"command" => "/match", "text" => "report" <> text} = params) do
-  #   with %Commands.Report{} = command <- report(text, params),
-  #        {:ok, score} <- Scoreboard.process_score(command) do
-  #     conn
-  #     |> render("report.json", score: PingPong.Repo.preload(score, [:left, :right]))
-  #   else
-  #     {:error, :equals} ->
-  #       conn
-  #       |> render("equals.json")
-
-  #     _ ->
-  #       conn
-  #       |> render("error.json")
-  #   end
-  # end
 
   def command(conn, %{"command" => "/match", "text" => "score" <> text} = params) do
     processed =
@@ -46,22 +41,32 @@ defmodule PingPongWeb.CommandController do
         String.trim(String.replace(text, <<160::utf8>>, " "))
       )
 
-    with %{"id" => id} <- processed do
+    season = Seasons.get_active_season()
+
+    with %Season{} <- season, id when id != :no_id <- Map.get(processed || %{}, "id", :no_id) do
       case Scoreboard.get_or_create_user_by_slack(id) do
         {:ok, user} ->
+          user = Scoreboard.get_or_create_season_user_for_user(user, season.id)
+
           conn
-          |> render("player_score.json", slack_id: user.slack_id, elo: user.elo)
+          |> render("player_score.json", slack_id: user.slack_id, elo: user.season_user.elo)
 
         {:error, _} ->
           conn
           |> render("error.json")
       end
     else
+      nil ->
+        conn
+        |> render("season_not_found.json")
+
       _ ->
         case Scoreboard.get_or_create_user_by_slack(params["user_id"]) do
           {:ok, user} ->
+            user = Scoreboard.get_or_create_season_user_for_user(user, season.id)
+
             conn
-            |> render("personal_score.json", elo: user.elo)
+            |> render("personal_score.json", elo: user.season_user.elo)
 
           {:error, _} ->
             conn

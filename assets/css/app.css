@@ -42,6 +42,12 @@ body > div,
   border-radius: 0.25rem;
 }
 
+.form-select {
+  border-color: #d1d5db;
+  border-width: 1px;
+  border-radius: 0.25rem;
+}
+
 .sparkline-container.absolute {
   left: 50%;
   transform: translate(-50%, 0);

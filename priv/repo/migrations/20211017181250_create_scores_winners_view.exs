@@ -2,7 +2,7 @@ defmodule PingPong.Repo.Migrations.CreateScoresWinnersView do
   use Ecto.Migration
 
   def change do
-    execute "create view scores_winners as
+    execute "create view scores_extra as
       select
         *,
         CASE

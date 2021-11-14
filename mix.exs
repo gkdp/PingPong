@@ -56,6 +56,7 @@ defmodule PingPong.MixProject do
       {:slack, "~> 0.23.5"},
       {:cachex, "~> 3.4"},
       {:elo, "~> 0.1.0"},
+      {:timex, "~> 3.0"},
       {:quantum, "~> 3.0"}
     ]
   end

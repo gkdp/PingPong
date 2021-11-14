@@ -2,6 +2,8 @@ defmodule PingPongWeb.EventController do
   use PingPongWeb, :controller
 
   alias PingPong.Scoreboard
+  alias PingPong.Scores.Score
+  alias PingPong.Slack
 
   action_fallback PingPongWeb.FallbackController
 
@@ -12,8 +14,8 @@ defmodule PingPongWeb.EventController do
   def event_action(conn, %{"actions" => [%{"value" => "confirm:" <> id}]} = params) do
     score = Scoreboard.get_score!(id)
 
-    with %Scoreboard.Score{confirmed_at: nil, denied_at: nil} <- score do
-      Scoreboard.send_confirmation_message(
+    with %Score{confirmed_at: nil, denied_at: nil} <- score do
+      Slack.send_confirmation_message(
         Scoreboard.confirm_score(score)
       )
     end
@@ -43,8 +45,8 @@ defmodule PingPongWeb.EventController do
   def event_action(conn, %{"actions" => [%{"value" => "deny:" <> id}]} = params) do
     score = Scoreboard.get_score!(id)
 
-    with %Scoreboard.Score{confirmed_at: nil, denied_at: nil} <- score do
-      Scoreboard.send_confirmation_message(
+    with %Score{confirmed_at: nil, denied_at: nil} <- score do
+      Slack.send_confirmation_message(
         Scoreboard.deny_score(score)
       )
     end

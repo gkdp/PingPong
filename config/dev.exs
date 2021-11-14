@@ -4,7 +4,7 @@ import Config
 config :ping_pong, PingPong.Repo,
   username: "postgres",
   password: "postgres",
-  database: "ping_pong_dev",
+  database: "ping_pong_prod",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

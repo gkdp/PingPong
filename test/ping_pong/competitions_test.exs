@@ -1,61 +1,61 @@
-defmodule PingPong.CompetitionsTest do
+defmodule PingPong.SeasonsTest do
   use PingPong.DataCase
 
-  alias PingPong.Competitions
+  alias PingPong.Seasons
 
-  describe "competitions" do
-    alias PingPong.Competitions.Competition
+  describe "seasons" do
+    alias PingPong.Seasons.Season
 
-    import PingPong.CompetitionsFixtures
+    import PingPong.SeasonsFixtures
 
     @invalid_attrs %{end_at: nil, start_at: nil}
 
-    test "list_competitions/0 returns all competitions" do
-      competition = competition_fixture()
-      assert Competitions.list_competitions() == [competition]
+    test "list_seasons/0 returns all seasons" do
+      season = season_fixture()
+      assert Seasons.list_seasons() == [season]
     end
 
-    test "get_competition!/1 returns the competition with given id" do
-      competition = competition_fixture()
-      assert Competitions.get_competition!(competition.id) == competition
+    test "get_season!/1 returns the season with given id" do
+      season = season_fixture()
+      assert Seasons.get_season!(season.id) == season
     end
 
-    test "create_competition/1 with valid data creates a competition" do
+    test "create_season/1 with valid data creates a season" do
       valid_attrs = %{end_at: ~N[2021-11-09 14:55:00], start_at: ~N[2021-11-09 14:55:00]}
 
-      assert {:ok, %Competition{} = competition} = Competitions.create_competition(valid_attrs)
-      assert competition.end_at == ~N[2021-11-09 14:55:00]
-      assert competition.start_at == ~N[2021-11-09 14:55:00]
+      assert {:ok, %Season{} = season} = Seasons.create_season(valid_attrs)
+      assert season.end_at == ~N[2021-11-09 14:55:00]
+      assert season.start_at == ~N[2021-11-09 14:55:00]
     end
 
-    test "create_competition/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Competitions.create_competition(@invalid_attrs)
+    test "create_season/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Seasons.create_season(@invalid_attrs)
     end
 
-    test "update_competition/2 with valid data updates the competition" do
-      competition = competition_fixture()
+    test "update_season/2 with valid data updates the season" do
+      season = season_fixture()
       update_attrs = %{end_at: ~N[2021-11-10 14:55:00], start_at: ~N[2021-11-10 14:55:00]}
 
-      assert {:ok, %Competition{} = competition} = Competitions.update_competition(competition, update_attrs)
-      assert competition.end_at == ~N[2021-11-10 14:55:00]
-      assert competition.start_at == ~N[2021-11-10 14:55:00]
+      assert {:ok, %Season{} = season} = Seasons.update_season(season, update_attrs)
+      assert season.end_at == ~N[2021-11-10 14:55:00]
+      assert season.start_at == ~N[2021-11-10 14:55:00]
     end
 
-    test "update_competition/2 with invalid data returns error changeset" do
-      competition = competition_fixture()
-      assert {:error, %Ecto.Changeset{}} = Competitions.update_competition(competition, @invalid_attrs)
-      assert competition == Competitions.get_competition!(competition.id)
+    test "update_season/2 with invalid data returns error changeset" do
+      season = season_fixture()
+      assert {:error, %Ecto.Changeset{}} = Seasons.update_season(season, @invalid_attrs)
+      assert season == Seasons.get_season!(season.id)
     end
 
-    test "delete_competition/1 deletes the competition" do
-      competition = competition_fixture()
-      assert {:ok, %Competition{}} = Competitions.delete_competition(competition)
-      assert_raise Ecto.NoResultsError, fn -> Competitions.get_competition!(competition.id) end
+    test "delete_season/1 deletes the season" do
+      season = season_fixture()
+      assert {:ok, %Season{}} = Seasons.delete_season(season)
+      assert_raise Ecto.NoResultsError, fn -> Seasons.get_season!(season.id) end
     end
 
-    test "change_competition/1 returns a competition changeset" do
-      competition = competition_fixture()
-      assert %Ecto.Changeset{} = Competitions.change_competition(competition)
+    test "change_season/1 returns a season changeset" do
+      season = season_fixture()
+      assert %Ecto.Changeset{} = Seasons.change_season(season)
     end
   end
 end

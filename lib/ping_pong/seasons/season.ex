@@ -1,24 +1,24 @@
-defmodule PingPong.Competitions.Competition do
+defmodule PingPong.Seasons.Season do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias PingPong.Scoreboard.User
-  alias PingPong.Competitions.CompetitionUser
+  alias PingPong.Seasons.SeasonUser
 
-  schema "competitions" do
+  schema "seasons" do
     field :title, :string
     field :description, :string
     field :start_at, :naive_datetime
     field :end_at, :naive_datetime
 
-    many_to_many :users, User, join_through: CompetitionUser
+    has_many :season_users, SeasonUser
+    has_many :users, through: [:season_users, :user]
 
     timestamps()
   end
 
   @doc false
-  def changeset(competition, attrs) do
-    competition
+  def changeset(season, attrs) do
+    season
     |> cast(attrs, [:title, :start_at, :end_at])
     |> validate_required([:start_at, :end_at])
   end

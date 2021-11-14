@@ -73,7 +73,7 @@ defmodule PingPongWeb.Router do
     pipe_through [:browser]
 
     live "/scoreboard", ScoreboardLive.Index, :index
-    live "/scoreboard/:id", ScoreboardLive.Competition, :index
+    live "/scoreboard/season", ScoreboardLive.Season, :index
 
     live "/teams", TeamLive.Index, :index
     live "/teams/new", TeamLive.Index, :new

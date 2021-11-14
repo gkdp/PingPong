@@ -9,26 +9,40 @@ defmodule PingPong.Scoreboard do
   import Ecto.Changeset, only: [change: 2]
   alias PingPong.Repo
 
-  alias PingPong.Commands
   alias PingPong.Commands.Report
-  alias PingPong.Scoreboard.Score
-  alias PingPong.Scoreboard.ScoreWinner
-  alias PingPong.Scoreboard.EloHistory
   alias PingPong.Scoreboard.User
-  alias Slack.Web.Chat
+  alias PingPong.Seasons.SeasonUser
+  alias PingPong.Scores.Score
+  alias PingPong.Scores.ScoreView
+  alias PingPong.Scores.Elo, as: EloHistory
+  alias PingPong.Seasons
+  alias Slack.Web.Users
+  alias PingPong.Slack
 
-  @doc """
-  Returns the list of scores.
+  # def list_users do
+  #   ranking_query =
+  #     from c in EloHistory,
+  #       select: %{id: c.id, row_number: over(row_number(), :users_partition)},
+  #       windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
 
-  ## Examples
+  #   history_query =
+  #     from c in EloHistory,
+  #       join: r in subquery(ranking_query),
+  #       on: c.id == r.id and r.row_number <= 10,
+  #       order_by: :inserted_at
 
-      iex> list_scores()
-      [%Score{}, ...]
-
-  """
-  def list_scores do
-    Repo.all(Score)
-  end
+  #   from(u in User,
+  #     order_by: [desc: u.elo]
+  #   )
+  #   |> Repo.all()
+  #   |> Repo.preload(
+  #     winnings:
+  #       from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.season_id)),
+  #     losses:
+  #       from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.season_id)),
+  #     elo_history: history_query
+  #   )
+  # end
 
   @doc """
   Gets a single score.
@@ -46,59 +60,7 @@ defmodule PingPong.Scoreboard do
   """
   def get_score!(id) do
     Repo.get!(Score, id)
-    |> Repo.preload([:left, :right])
-  end
-
-  @doc """
-  Creates a score.
-
-  ## Examples
-
-      iex> create_score(%{field: value})
-      {:ok, %Score{}}
-
-      iex> create_score(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_score(attrs \\ %{}) do
-    %Score{}
-    |> Score.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Returns the list of users.
-
-  ## Examples
-
-      iex> list_users()
-      [%User{}, ...]
-
-  """
-  def list_users do
-    ranking_query =
-      from c in EloHistory,
-        select: %{id: c.id, row_number: over(row_number(), :users_partition)},
-        windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
-
-    history_query =
-      from c in EloHistory,
-        join: r in subquery(ranking_query),
-        on: c.id == r.id and r.row_number <= 10,
-        order_by: :inserted_at
-
-    from(u in User,
-      order_by: [desc: u.elo]
-    )
-    |> Repo.all()
-    |> Repo.preload(
-      winnings:
-        from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.competition_id)),
-      losses:
-        from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.competition_id)),
-      elo_history: history_query
-    )
+    |> Repo.preload([left: [:user], right: [:user]])
   end
 
   def get_user_by_slack(id) when is_binary(id) do
@@ -107,7 +69,7 @@ defmodule PingPong.Scoreboard do
 
   def get_or_create_user_by_slack(id) when is_binary(id) do
     with nil <- get_user_by_slack(id),
-         %{"ok" => true, "user" => info} <- Slack.Web.Users.info(id),
+         %{"ok" => true, "user" => info} <- Users.info(id),
          false <- Map.get(info, "is_bot") do
       user =
         %User{
@@ -123,19 +85,24 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  # def process_score(%Commands.Report{left_id: left_id, right_id: right_id})
-  #     when left_id == right_id do
-  #   {:error, :equals}
-  # end
+  def get_or_create_season_user_for_user(%User{} = user, season_id) do
+    user =
+      user
+      |> Repo.preload(season_user: from(u in SeasonUser, where: u.season_id == ^season_id))
 
-  # def process_score(%Commands.Report{} = report) do
-  #   with {:ok, left} <- get_or_create_user_by_slack(report.left_id),
-  #        {:ok, right} <- get_or_create_user_by_slack(report.right_id) do
-  #     do_score(left, right, report)
-  #   else
-  #     _ -> {:error, nil}
-  #   end
-  # end
+    if is_nil(user.season_user) do
+      season_user =
+        %SeasonUser{
+          user_id: user.id,
+          season_id: season_id
+        }
+        |> Repo.insert!()
+
+      %{user | season_user: season_user}
+    else
+      user
+    end
+  end
 
   # def process_scores(%Report{left_id: left_id, right_id: right_id})
   #     when left_id == right_id do
@@ -144,23 +111,29 @@ defmodule PingPong.Scoreboard do
 
   def process_scores(%Report{} = report) do
     with {:ok, left} <- get_or_create_user_by_slack(report.left_id),
-         {:ok, right} <- get_or_create_user_by_slack(report.right_id) do
+         {:ok, right} <- get_or_create_user_by_slack(report.right_id),
+         %Seasons.Season{} = season <- Seasons.get_active_season() do
       processed =
         for %Report.Score{} = score <- report.scores do
-          with {:ok, final} <- do_score(left, right, score) do
+          left = get_or_create_season_user_for_user(left, season.id)
+          right = get_or_create_season_user_for_user(right, season.id)
+
+          # Session ding
+          with {:ok, final} <- process_score(left, right, score) do
             final
           else
             _ -> nil
           end
         end
 
-      {:ok, Enum.filter(processed, &!is_nil(&1))}
+      {:ok, Enum.filter(processed, &(!is_nil(&1)))}
     else
+      nil -> {:error, :season_not_found}
       _ -> {:error, nil}
     end
   end
 
-  defp do_score(left, right, %Report.Score{} = score) do
+  defp process_score(left, right, %Report.Score{} = score) do
     winner =
       cond do
         score.left > score.right -> :left
@@ -168,18 +141,19 @@ defmodule PingPong.Scoreboard do
         true -> :draw
       end
 
-    changeset =
-      Score.changeset(%Score{}, %{
-        left_id: left.id,
-        right_id: right.id,
-        winner: winner,
-        left_score: score.left,
-        right_score: score.right
-      })
-
     inserted_score =
-      changeset
-      |> Repo.insert()
+      Repo.insert(
+        Score.changeset(%Score{}, %{
+          left_id: left.season_user.id,
+          right_id: right.season_user.id,
+          winner: winner,
+          left_score: score.left,
+          right_score: score.right
+        })
+      )
+
+    IO.inspect(12333)
+    IO.inspect(inserted_score)
 
     {winning_user, winning_score} =
       if(winner == :left, do: {left, score.left}, else: {right, score.right})
@@ -188,7 +162,7 @@ defmodule PingPong.Scoreboard do
       if(winner != :left, do: {left, score.left}, else: {right, score.right})
 
     with {:ok, final_score} = tuple <- inserted_score do
-      send_confirm_message(
+      Slack.send_confirm_message(
         {winning_user, winning_score},
         {losing_user, losing_score},
         right,
@@ -205,7 +179,7 @@ defmodule PingPong.Scoreboard do
 
     wins =
       Repo.aggregate(
-        from(s in ScoreWinner,
+        from(s in ScoreView,
           where: not is_nil(s.confirmed_at) and s.won_by_id == ^winning_user.id
         ),
         :count
@@ -227,11 +201,19 @@ defmodule PingPong.Scoreboard do
       Repo.update!(change(losing_user, elo: losing_elo))
 
       Repo.insert!(
-        change(%EloHistory{}, %{user_id: winning_user.id, score_id: score.id, elo: winning_elo})
+        change(%EloHistory{}, %{
+          season_user_id: winning_user.id,
+          score_id: score.id,
+          elo: winning_elo
+        })
       )
 
       Repo.insert!(
-        change(%EloHistory{}, %{user_id: losing_user.id, score_id: score.id, elo: losing_elo})
+        change(%EloHistory{}, %{
+          season_user_id: losing_user.id,
+          score_id: score.id,
+          elo: losing_elo
+        })
       )
 
       Repo.update!(change(score, confirmed_at: time))
@@ -246,69 +228,6 @@ defmodule PingPong.Scoreboard do
     )
   end
 
-  def send_confirm_message({winner, score_winner}, {loser, score_loser}, right, score) do
-    message =
-      if winner.id == right.id do
-        "Volgens <@#{loser.slack_id}> heb je gewonnen met #{score_winner}:#{score_loser}. Bevestigen?"
-      else
-        "Volgens <@#{winner.slack_id}> heb je verloren met #{score_winner}:#{score_loser}. Bevestigen?"
-      end
-
-    Chat.post_message(
-      right.slack_id,
-      message,
-      %{
-        blocks:
-          Jason.encode!([
-            %{
-              type: "section",
-              text: %{
-                type: "mrkdwn",
-                text: message
-              }
-            },
-            %{
-              type: "actions",
-              elements: [
-                %{
-                  type: "button",
-                  text: %{
-                    type: "plain_text",
-                    text: "Bevestig"
-                  },
-                  style: "primary",
-                  value: "confirm:#{score.id}"
-                },
-                %{
-                  type: "button",
-                  text: %{
-                    type: "plain_text",
-                    text: "Weiger"
-                  },
-                  style: "danger",
-                  value: "deny:#{score.id}"
-                }
-              ]
-            }
-          ])
-      }
-    )
-  end
-
-  def send_confirmation_message(%Score{confirmed_at: time} = score) when not is_nil(time) do
-    Chat.post_message(
-      score.left.slack_id,
-      "<@#{score.right.slack_id}> heeft de score #{score.left_score}:#{score.right_score} bevestigd."
-    )
-  end
-
-  def send_confirmation_message(%Score{denied_at: time} = score) when not is_nil(time) do
-    Chat.post_message(
-      score.left.slack_id,
-      "<@#{score.right.slack_id}> heeft de score #{score.left_score}:#{score.right_score} geweigerd."
-    )
-  end
-
   def scheduled_confirm do
     scores =
       from(s in Score,
@@ -320,7 +239,7 @@ defmodule PingPong.Scoreboard do
     for score <- scores do
       Logger.info("Auto confirm score", score_id: score.id)
 
-      send_confirmation_message(confirm_score(score))
+      Slack.send_confirmation_message(confirm_score(score))
     end
   end
 

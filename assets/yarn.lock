@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@alpinejs/collapse@^3.5.1":
+  version "3.5.1"
+  resolved "https://registry.npmjs.org/@alpinejs/collapse/-/collapse-3.5.1.tgz"
+  integrity sha512-lYHVpeTWjGOq43PzDqcsN1zWwCBsGlG8asdD+kBBeOYZmGgRoDkv9q0bGwea74eW3mX751RRx44/RqYopblN7Q==
+
 "@babel/code-frame@^7.0.0":
   version "7.15.8"
   resolved "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.15.8.tgz"
@@ -25,7 +30,7 @@
 
 "@fnando/sparkline@^0.3.10":
   version "0.3.10"
-  resolved "https://registry.yarnpkg.com/@fnando/sparkline/-/sparkline-0.3.10.tgz#0cb6549a232af0f19f75b33d38fddd4f5ed9f086"
+  resolved "https://registry.npmjs.org/@fnando/sparkline/-/sparkline-0.3.10.tgz"
   integrity sha512-Rwz2swatdSU5F4sCOvYG8EOWdjtLgq5d8nmnqlZ3PXdWJI9Zq9BRUvJ/9ygjajJG8qOyNpMFX3GEVFjZIuB1Jg==
 
 "@gkdp/prettier-config@^1.0.0":
@@ -56,7 +61,7 @@
 
 "@tailwindcss/custom-forms@^0.2.1":
   version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@tailwindcss/custom-forms/-/custom-forms-0.2.1.tgz#40e5ed1fff6d29d8ed1c508a0b2aaf8da96962e0"
+  resolved "https://registry.npmjs.org/@tailwindcss/custom-forms/-/custom-forms-0.2.1.tgz"
   integrity sha512-XdP5XY6kxo3x5o50mWUyoYWxOPV16baagLoZ5uM41gh6IhXzhz/vJYzqrTb/lN58maGIKlpkxgVsQUNSsbAS3Q==
   dependencies:
     lodash "^4.17.11"
@@ -77,14 +82,14 @@
 
 "@vue/reactivity@^3.0.2":
   version "3.2.21"
-  resolved "https://registry.yarnpkg.com/@vue/reactivity/-/reactivity-3.2.21.tgz#073ad144192ed78a07e151e95a3baa515e4099a2"
+  resolved "https://registry.npmjs.org/@vue/reactivity/-/reactivity-3.2.21.tgz"
   integrity sha512-7C57zFm/5E3SSTUhVuYj1InDwuJ+GIVQ/z+H43C9sST85gIThGXVhksl1yWTAadf8Yz4T5lSbqi5Ds8U/ueWcw==
   dependencies:
     "@vue/shared" "3.2.21"
 
 "@vue/shared@3.2.21":
   version "3.2.21"
-  resolved "https://registry.yarnpkg.com/@vue/shared/-/shared-3.2.21.tgz#4cd80c0e62cf65a7adab2449e86b6f0cb33a130b"
+  resolved "https://registry.npmjs.org/@vue/shared/-/shared-3.2.21.tgz"
   integrity sha512-5EQmIPK6gw4UVYUbM959B0uPsJ58+xoMESCZs3N89XyvJ9e+fX4pqEPrOGV8OroIk3SbEvJcC+eYc8BH9JQrHA==
 
 acorn-node@^1.6.1:
@@ -108,7 +113,7 @@ acorn@^7.0.0:
 
 alpinejs@3.3.0:
   version "3.3.0"
-  resolved "https://registry.yarnpkg.com/alpinejs/-/alpinejs-3.3.0.tgz#aef11f08e3260ae875663ddfb1633f2f06ccd883"
+  resolved "https://registry.npmjs.org/alpinejs/-/alpinejs-3.3.0.tgz"
   integrity sha512-nBL9Aq4l1EUGd6D48VqcdDYFlpAJ9CLh+7nZZ5chlPWadiZyDAO10hTavOt7AsBF3rGniUtAZmXA4mGw4rOvAw==
   dependencies:
     "@vue/reactivity" "^3.0.2"
@@ -624,15 +629,10 @@ micromatch@^4.0.4:
     braces "^3.0.1"
     picomatch "^2.2.3"
 
-mini-svg-data-uri@^1.0.3:
+mini-svg-data-uri@^1.0.3, mini-svg-data-uri@^1.2.3:
   version "1.4.3"
-  resolved "https://registry.yarnpkg.com/mini-svg-data-uri/-/mini-svg-data-uri-1.4.3.tgz#43177b2e93766ba338931a3e2a84a3dfd3a222b8"
+  resolved "https://registry.npmjs.org/mini-svg-data-uri/-/mini-svg-data-uri-1.4.3.tgz"
   integrity sha512-gSfqpMRC8IxghvMcxzzmMnWpXAChSA+vy4cia33RgerMS8Fex95akUyQZPbxJJmeBGiGmK7n/1OpUX8ksRjIdA==
-
-mini-svg-data-uri@^1.2.3:
-  version "1.3.3"
-  resolved "https://registry.npmjs.org/mini-svg-data-uri/-/mini-svg-data-uri-1.3.3.tgz"
-  integrity sha512-+fA2oRcR1dJI/7ITmeQJDrYWks0wodlOz0pAEhKYJ2IVc1z0AnwJUsKY2fzFmPAM3Jo9J0rBx8JAA9QQSJ5PuA==
 
 minimatch@^3.0.4:
   version "3.0.4"
@@ -955,7 +955,7 @@ to-regex-range@^5.0.1:
 
 traverse@^0.6.6:
   version "0.6.6"
-  resolved "https://registry.yarnpkg.com/traverse/-/traverse-0.6.6.tgz#cbdf560fd7b9af632502fed40f918c157ea97137"
+  resolved "https://registry.npmjs.org/traverse/-/traverse-0.6.6.tgz"
   integrity sha1-y99WD9e5r2MlAv7UD5GMFX6pcTc=
 
 universalify@^2.0.0:

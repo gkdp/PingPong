@@ -21,8 +21,11 @@ import 'phoenix_html'
 import { Socket } from 'phoenix'
 import { LiveSocket } from 'phoenix_live_view'
 import Alpine from 'alpinejs'
+import collapse from '@alpinejs/collapse'
 import sparkline from '@fnando/sparkline'
 import topbar from '../vendor/topbar'
+
+Alpine.plugin(collapse)
 
 window.Alpine = Alpine
 Alpine.start()
