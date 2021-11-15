@@ -152,9 +152,6 @@ defmodule PingPong.Scoreboard do
         })
       )
 
-    IO.inspect(12333)
-    IO.inspect(inserted_score)
-
     {winning_user, winning_score} =
       if(winner == :left, do: {left, score.left}, else: {right, score.right})
 

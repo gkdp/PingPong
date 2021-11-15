@@ -85,3 +85,14 @@ body > div,
     white-space: nowrap;
     z-index: 9999;
 }
+
+.before-nip::before {
+  content: '';
+  position: absolute;
+  top: -0.5rem;
+  left: 2.5rem;
+  width: 1rem;
+  height: 1rem;
+  transform: rotate(45deg);
+  @apply bg-gray-100;
+}

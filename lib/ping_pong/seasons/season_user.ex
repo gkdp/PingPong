@@ -18,4 +18,23 @@ defmodule PingPong.Seasons.SeasonUser do
 
     timestamps()
   end
+
+  def get_scores(%__MODULE__{winnings: winnings, losses: losses}, limit \\ nil) do
+    winnings ++ losses
+    |> Enum.sort_by(&(&1.inserted_at), {:desc, Date})
+    |> then(fn scores ->
+      if limit do
+        scores
+        |> Enum.take(limit)
+      else
+        scores
+      end
+    end)
+  end
+
+  def get_last_score(%__MODULE__{} = season_user) do
+    season_user
+    |> get_scores()
+    |> List.first()
+  end
 end

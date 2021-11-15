@@ -15,22 +15,28 @@ defmodule PingPongWeb.ScoreboardLive.Season do
       Seasons.get_active_season!()
       |> Seasons.load_users()
 
+    changeset =
+      changeset(%{
+        hide_players: true,
+        hide_teams: false
+      })
+
     {:noreply,
      socket
      |> assign(:page_title, season.title)
-     |> assign(:changeset, changeset(%{hide: true}))
      |> assign(:season, season)
      |> assign(:teams, list_teams(season))
-     |> assign(:lowest_elo, lowest_elo(season))}
+     |> assign(:lowest_elo, lowest_elo(season))
+     |> assign_changeset(season, changeset)}
   end
 
   @impl true
-  def handle_event("validate", %{"scores" => scores}, socket) do
-    changeset = changeset(scores)
+  def handle_event("validate", %{"filters" => filters}, socket) do
+    changeset = changeset(filters)
 
     {:noreply,
      socket
-     |> assign(:changeset, changeset)}
+     |> assign_changeset(socket.assigns.season, changeset)}
   end
 
   def format_team_names(teams) do
@@ -57,17 +63,47 @@ defmodule PingPongWeb.ScoreboardLive.Season do
 
   defp list_teams(%Season{} = season) do
     season.users
-    |> Enum.flat_map(&(&1.teams))
-    |> Enum.uniq_by(&(&1.id))
+    |> Enum.flat_map(& &1.teams)
+    |> Enum.uniq_by(& &1.id)
   end
 
   defp lowest_elo(%Season{} = season) do
     season.season_users
-    |> Enum.map(&(&1.elo))
+    |> Enum.map(& &1.elo)
     |> Enum.min(fn -> 1000 end)
   end
 
-  @types %{hide: :boolean}
+  defp assign_changeset(socket, season, changeset) do
+    users =
+      season.season_users
+      |> then(fn users ->
+        if Ecto.Changeset.get_field(changeset, :hide_players) do
+          users
+          |> Enum.filter(&(!Enum.empty?(&1.winnings) || !Enum.empty?(&1.losses)))
+        else
+          users
+        end
+      end)
+      |> then(fn users ->
+        with team when is_integer(team) <- Ecto.Changeset.get_field(changeset, :team) do
+          users
+          |> Enum.filter(fn user ->
+            found = Enum.find(user.user.teams, &(&1.id == team))
+
+            found != nil
+          end)
+        else
+          _ -> users
+        end
+      end)
+
+    socket
+    |> assign(:changeset, changeset)
+    |> assign(:hide_teams, Ecto.Changeset.get_field(changeset, :hide_teams))
+    |> assign(:users, users)
+  end
+
+  @types %{hide_players: :boolean, hide_teams: :boolean, team: :integer}
   defp changeset(params) do
     {%{}, @types}
     |> Ecto.Changeset.cast(params, Map.keys(@types))

@@ -18,6 +18,7 @@ defmodule PingPongWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    get "/scoreboard", PageController, :index
   end
 
   # Other scopes may use custom stacks.
@@ -72,7 +73,6 @@ defmodule PingPongWeb.Router do
   scope "/", PingPongWeb do
     pipe_through [:browser]
 
-    live "/scoreboard", ScoreboardLive.Index, :index
     live "/scoreboard/season", ScoreboardLive.Season, :index
 
     live "/teams", TeamLive.Index, :index

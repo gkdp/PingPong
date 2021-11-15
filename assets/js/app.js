@@ -25,10 +25,10 @@ import collapse from '@alpinejs/collapse'
 import sparkline from '@fnando/sparkline'
 import topbar from '../vendor/topbar'
 
-Alpine.plugin(collapse)
-
 window.Alpine = Alpine
 Alpine.start()
+
+Alpine.plugin(collapse)
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")

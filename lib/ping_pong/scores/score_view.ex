@@ -17,4 +17,17 @@ defmodule PingPong.Scores.ScoreView do
 
     timestamps()
   end
+
+  def get_other_user(%__MODULE__{won_by_id: won_by_id, lost_by_id: lost_by_id}, user, others) do
+    cond do
+      won_by_id == user.id ->
+        Enum.find(others, &(&1.id == lost_by_id))
+
+        lost_by_id == user.id ->
+        Enum.find(others, &(&1.id == won_by_id))
+
+      true ->
+        user
+    end
+  end
 end

@@ -2,6 +2,7 @@ defmodule PingPongWeb.CommandController do
   use PingPongWeb, :controller
 
   alias PingPong.Commands.Report
+  alias PingPong.Commands.DoublesReport
   alias PingPong.Scoreboard
   alias PingPong.Seasons.Season
   alias PingPong.Seasons
@@ -17,22 +18,42 @@ defmodule PingPongWeb.CommandController do
         )
       else
         {:error, :equals} ->
-          IO.inspect 789
           conn
           |> render("equals.json")
 
         {:error, :season_not_found} ->
-          IO.inspect 345
           conn
           |> render("season_not_found.json")
 
         _ ->
-          IO.inspect 567
           conn
           |> render("error.json")
       end
     end
   end
+
+  # def command(conn, %{"command" => "/match", "text" => "doubles" <> text} = params) do
+  #   with %Report{} = report <- report_doubles(text, params) do
+  #     with {:ok, scores} <- Scoreboard.process_scores(report) do
+  #       # conn
+  #       # |> render("report_doubles.json",
+  #       #   scores: PingPong.Repo.preload(scores, left: [:user], right: [:user])
+  #       # )
+  #     else
+  #       {:error, :equals} ->
+  #         conn
+  #         |> render("equals.json")
+
+  #       {:error, :season_not_found} ->
+  #         conn
+  #         |> render("season_not_found.json")
+
+  #       _ ->
+  #         conn
+  #         |> render("error.json")
+  #     end
+  #   end
+  # end
 
   def command(conn, %{"command" => "/match", "text" => "score" <> text} = params) do
     processed =
@@ -106,4 +127,33 @@ defmodule PingPongWeb.CommandController do
       }
     end
   end
+
+  # defp report_doubles(text, params) do
+  #   processed =
+  #     Regex.named_captures(
+  #       ~r/<@(?<buddy_id>.+)\|(.+)>(\s+?)report(\s+?)<@(?<opponent_id>.+)\|(.+)>(\s+?)<@(?<opponnent_id_buddy>.+)\|(.+)>(\s+?)(?<scores>.*)/,
+  #       String.trim(String.replace(text, <<160::utf8>>, " "))
+  #     )
+
+  #   with %{"scores" => scores} <- processed, id <- params["user_id"] do
+  #     scores =
+  #       for score <- String.split(scores, ~r/\s+/) do
+  #         with %{"left" => left, "right" => right} <-
+  #                Regex.named_captures(~r/(?<left>\d+):(?<right>\d+)/, score) do
+  #           %Report.Score{
+  #             left: String.to_integer(left),
+  #             right: String.to_integer(right)
+  #           }
+  #         end
+  #       end
+
+  #     %DoublesReport{
+  #       left_id: id,
+  #       left_id_buddy: Map.get(processed, "buddy_id"),
+  #       right_id: Map.get(processed, "opponent_id"),
+  #       right_id_buddy: Map.get(processed, "opponent_id_buddy"),
+  #       scores: Enum.filter(scores, &(!is_nil(&1)))
+  #     }
+  #   end
+  # end
 end
