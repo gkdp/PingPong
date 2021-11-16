@@ -26,6 +26,52 @@ import sparkline from '@fnando/sparkline'
 import topbar from '../vendor/topbar'
 
 window.Alpine = Alpine
+
+Alpine.data('heights', () => ({
+  heights: {},
+  innerHeights: {},
+
+  compareLeft: { id: null, elo: 0 },
+  compareRight: { id: null, elo: 0 },
+
+  chance: null,
+
+  init() {
+    this.update()
+  },
+
+  compare(userId, elo) {
+    if (!this.compareLeft.id) {
+      this.compareLeft = { id: userId, elo: elo }
+    } else if (!this.compareRight.id) {
+      this.compareRight = { id: userId, elo: elo }
+      this.chance = this.rate(this.compareLeft.elo, this.compareRight.elo)
+    } else {
+      this.compareLeft = { id: userId, elo: elo }
+      this.compareRight = { id: null, elo: 0 }
+      this.chance = null
+    }
+  },
+
+  rate(player, opponent) {
+    return Math.round((1 / (1 + Math.pow(10, (opponent - player) / 400))) * 100)
+  },
+
+  update() {
+    this.$nextTick(() => {
+      document.querySelectorAll('#scores > div').forEach((el, index) => {
+        this.heights[index] = el.clientHeight + 'px'
+
+        const grid = el.querySelector('.grid')
+
+        if (grid) {
+          this.innerHeights[index] = grid.clientHeight + 'px'
+        }
+      })
+    })
+  },
+}))
+
 Alpine.start()
 
 Alpine.plugin(collapse)

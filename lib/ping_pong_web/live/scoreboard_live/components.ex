@@ -8,54 +8,56 @@ defmodule PingPongWeb.ScoreboardLive.Components do
 
   def user_row(%{user: %SeasonUser{user: user} = season_user} = assigns) do
     ~H"""
-    <div class="grid grid-cols-8 rounded items-center">
-      <div class="text-center">
-        <span class={"#{get_position_styling(@position)} font-bold"}><%= @position %></span>
-      </div>
-      <div class="col-span-4 px-3">
-        <a class="text-md hover:underline dark:text-white" href="#" x-on:click.prevent={"expanded = expanded == #{season_user.id} ? null : #{season_user.id}"}><%= User.get_slack_name(user) %></a>
+    <div>
+      <div class="grid grid-cols-8 rounded items-center">
+        <div class="text-center">
+          <span class={"#{get_position_styling(@position)} font-bold"}><%= @position %></span>
+        </div>
+        <div class="col-span-4 px-3">
+          <a class="text-md hover:underline dark:text-white" href="#" x-on:click.prevent={"expanded = expanded == #{season_user.id} ? null : #{season_user.id}; update()"}><%= User.get_slack_name(user) %></a>
 
-        <%= if Ecto.assoc_loaded?(user.teams) and not Enum.empty?(user.teams) and not Map.get(assigns, :hide_teams, false) do %>
-          <p class="text-xs text-gray-500 dark:text-gray-500"><%= Enum.join(Enum.map(user.teams, & "Team #{&1.name}"), ", ") %></p>
+          <%= if Ecto.assoc_loaded?(user.teams) and not Enum.empty?(user.teams) and not Map.get(assigns, :hide_teams, false) do %>
+            <p class="text-xs text-gray-500 dark:text-gray-500"><%= Enum.join(Enum.map(user.teams, & "Team #{&1.name}"), ", ") %></p>
+          <% end %>
+        </div>
+        <div class="text-center relative rounded overflow-hidden">
+          <p class="relative font-semibold dark:text-white text-md z-10 text-shadow pointer-events-none"><%= season_user.elo %></p>
+
+          <div class="sparkline-container absolute">
+            <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(season_user, @lowest_elo)}]"} />
+          </div>
+        </div>
+        <span class="tooltip" hidden="true"></span>
+        <div class="text-center">
+          <p class="text-md font-semibold dark:text-white"><%= season_user.count_won %></p>
+        </div>
+        <div class="text-center">
+          <p class="text-md font-semibold dark:text-white"><%= season_user.count_lost %></p>
+        </div>
+      </div>
+
+      <div x-show={"expanded == #{season_user.id}"} class="relative before-nip mt-4" style="display: none;">
+        <div class="bg-gray-100 p-6 text-sm">
+          <%= get_last_played_text(season_user, @others) %> <%= get_opponent_text(season_user, @position, @others) %>
+        </div>
+
+        <% last_scores = SeasonUser.get_scores(season_user, 5) %>
+
+        <%= if length(last_scores) > 1 do %>
+          <div class="bg-gray-100 px-6 pb-6 text-sm">
+            <p><%= length(last_scores) %> laatst gespeelde matches:</p>
+
+            <table class="table mt-2 w-1/2">
+              <%= for score <- SeasonUser.get_scores(season_user, 5) do %>
+                <tr>
+                  <td class="whitespace-nowrap pr-4" style="width: 1%;"><%= get_score_text(season_user, score) %></td>
+                  <td><%= get_opponents_text(season_user, score, @others) %></td>
+                </tr>
+              <% end %>
+            </table>
+          </div>
         <% end %>
       </div>
-      <div class="text-center relative rounded overflow-hidden">
-        <p class="relative font-semibold dark:text-white text-md z-10 text-shadow pointer-events-none"><%= season_user.elo %></p>
-
-        <div class="sparkline-container absolute">
-          <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(season_user, @lowest_elo)}]"} />
-        </div>
-      </div>
-      <span class="tooltip" hidden="true"></span>
-      <div class="text-center">
-        <p class="text-md font-semibold dark:text-white"><%= season_user.count_won %></p>
-      </div>
-      <div class="text-center">
-        <p class="text-md font-semibold dark:text-white"><%= season_user.count_lost %></p>
-      </div>
-    </div>
-
-    <div x-show={"expanded == #{season_user.id}"} class="relative before-nip" style="display: none;">
-      <div class="bg-gray-100 p-6 text-sm">
-        <%= get_last_played_text(season_user, @others) %> <%= get_opponent_text(season_user, @position, @others) %>
-      </div>
-
-      <% last_scores = SeasonUser.get_scores(season_user, 5) %>
-
-      <%= if length(last_scores) > 1 do %>
-        <div class="bg-gray-100 px-6 pb-6 text-sm">
-          <p><%= length(last_scores) %> laatst gespeelde matches:</p>
-
-          <table class="table mt-2 w-1/2">
-            <%= for score <- SeasonUser.get_scores(season_user, 5) do %>
-              <tr>
-                <td class="whitespace-nowrap pr-4" style="width: 1%;"><%= get_score_text(season_user, score) %></td>
-                <td><%= get_opponents_text(season_user, score, @others) %></td>
-              </tr>
-            <% end %>
-          </table>
-        </div>
-      <% end %>
     </div>
     """
   end
