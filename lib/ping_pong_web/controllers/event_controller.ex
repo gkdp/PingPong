@@ -11,13 +11,11 @@ defmodule PingPongWeb.EventController do
     event_action(conn, Jason.decode!(payload))
   end
 
-  def event_action(conn, %{"actions" => [%{"value" => "confirm:" <> id}]} = params) do
+  def event_action(conn, %{"actions" => [%{"value" => "confirm:" <> id}], "user" => %{"id" => slack_id}} = params) do
     score = Scoreboard.get_score!(id)
 
-    with %Score{confirmed_at: nil, denied_at: nil} <- score do
-      Slack.send_confirmation_message(
-        Scoreboard.confirm_score(score)
-      )
+    with %Score{confirmed_at: nil, denied_at: nil} <- score, {:ok, final} <- Scoreboard.confirm_score(score) do
+      Slack.send_confirmation_message(final, slack_id)
     end
 
     json =
@@ -42,13 +40,11 @@ defmodule PingPongWeb.EventController do
     |> resp(200, "")
   end
 
-  def event_action(conn, %{"actions" => [%{"value" => "deny:" <> id}]} = params) do
+  def event_action(conn, %{"actions" => [%{"value" => "deny:" <> id}], "user" => %{"id" => slack_id}} = params) do
     score = Scoreboard.get_score!(id)
 
-    with %Score{confirmed_at: nil, denied_at: nil} <- score do
-      Slack.send_confirmation_message(
-        Scoreboard.deny_score(score)
-      )
+    with %Score{confirmed_at: nil, denied_at: nil} <- score, final <- Scoreboard.deny_score(score) do
+      Slack.send_confirmation_message(final, slack_id)
     end
 
     json =
@@ -74,7 +70,7 @@ defmodule PingPongWeb.EventController do
   end
 
   def event_action(conn, params) do
-    IO.inspect("Fail")
+    IO.inspect("Fail action")
     IO.inspect(params)
 
     conn
@@ -87,7 +83,7 @@ defmodule PingPongWeb.EventController do
   end
 
   def event(conn, params) do
-    IO.inspect("Fail")
+    IO.inspect("Fail event")
     IO.inspect(params)
 
     conn

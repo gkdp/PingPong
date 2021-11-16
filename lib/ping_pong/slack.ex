@@ -59,40 +59,29 @@ defmodule PingPong.Slack do
     )
   end
 
-  def send_confirmation_message(%Score{confirmed_at: time} = score) when not is_nil(time) do
-    Chat.post_message(
-      score.left.slack_id,
-      "<@#{score.right.user.slack_id}> heeft de score #{score.left_score}:#{score.right_score} bevestigd."
-    )
+  def send_confirmation_message(%Score{confirmed_at: time} = score, slack_id) when not is_nil(time) do
+    left =
+      Score.get_score_users(score, :left)
+      |> Enum.map(&(&1.season_user.user))
+
+    for user <- left do
+      Chat.post_message(
+        user.slack_id,
+        "<@#{slack_id}> heeft de score #{score.left_score}:#{score.right_score} bevestigd."
+      )
+    end
   end
 
-  def send_confirmation_message(%Score{denied_at: time} = score) when not is_nil(time) do
-    Chat.post_message(
-      score.left.slack_id,
-      "<@#{score.right.user.slack_id}> heeft de score #{score.left_score}:#{score.right_score} geweigerd."
-    )
-  end
+  def send_confirmation_message(%Score{denied_at: time} = score, slack_id) when not is_nil(time) do
+    left =
+      Score.get_score_users(score, :left)
+      |> Enum.map(&(&1.season_user.user))
 
-  # def scheduled_confirm do
-  #   scores =
-  #     from(s in Score,
-  #       where: s.inserted_at <= ago(1, "day") and is_nil(s.confirmed_at) and is_nil(s.denied_at)
-  #     )
-  #     |> Repo.all()
-  #     |> Repo.preload([:left, :right])
-
-  #   for score <- scores do
-  #     Logger.info("Auto confirm score", score_id: score.id)
-
-  #     send_confirmation_message(confirm_score(score))
-  #   end
-  # end
-
-  defp get_k_factor(wins, elo) do
-    cond do
-      wins <= 10 -> 60
-      elo >= 2000 -> 10
-      true -> 25
+    for user <- left do
+      Chat.post_message(
+        user.slack_id,
+        "<@#{slack_id}> heeft de score #{score.left_score}:#{score.right_score} geweigerd."
+      )
     end
   end
 end

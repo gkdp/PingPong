@@ -1,5 +1,6 @@
 defmodule PingPongWeb.CommandView do
   use PingPongWeb, :view
+  import PingPongWeb.LiveHelpers, only: [humanize_list: 2]
 
   alias PingPong.Scores.Score
 
@@ -50,7 +51,7 @@ defmodule PingPongWeb.CommandView do
           type: "section",
           text: %{
             type: "mrkdwn",
-            text: "• `/match score`; Bekijk je score \n • `/match score @Gebruiker`; Bekijk de score van Gebruiker \n • `/match report @Gebruiker 21:10`; Rapporteer een score waarbij je met 21 punten hebt gewonnen"
+            text: "• `/match score`; Bekijk je score \n • `/match score @Gebruiker`; Bekijk de score van Gebruiker \n • `/match report @Gebruiker 21:10`; Rapporteer een score waarbij je met 21 punten hebt gewonnen \n • `/match doubles @Buddy report @Tegenstander @TegenstanderBuddy 21:10`; Rapporteer een score waarbij je met 21 punten hebt gewonnen met dubbels"
           }
         }
       ]
@@ -66,36 +67,28 @@ defmodule PingPongWeb.CommandView do
   end
 
   def render("report.json", %{scores: scores}) do
-    won_by =
-      scores
-      |> Enum.map(fn score ->
-        user = if score.winner == :left, do: score.left, else: score.right
-        text = if score.winner == :left, do: "*#{score.left_score}:#{score.right_score}*", else: "*#{score.right_score}:#{score.left_score}*"
+    {winners, losers} =
+      for %Score{winner: winner, season_users: season_users} = score <- scores, reduce: {[], []} do
+        {prev_winners, prev_losers} ->
+          winners =
+            for %{season_user: season_user} <- Score.get_score_users(score, winner) do
+              season_user.user
+            end
 
-        {user, text}
-      end)
-      |> Enum.group_by(fn {user, _} -> user end, fn {_, text} -> text end)
+          losers =
+            for %{season_user: season_user} <- Score.get_score_users(score, if(winner == :left, do: :right, else: :left)) do
+              season_user.user
+            end
+
+          {winners ++ prev_winners, losers ++ prev_losers}
+      end
 
     text =
-      for {user, scores} <- won_by, reduce: "" do
-        acc ->
-          acc <> "<@#{user.user.slack_id}> heeft gewonnen met #{Enum.join(scores, ", ")}. "
-      end
+      "#{humanize_list(winners, &("<@#{&1.slack_id}>"))} heeft gewonnen van #{humanize_list(losers, &("<@#{&1.slack_id}>"))}"
 
     %{
       response_type: "in_channel",
       text: text
     }
   end
-
-  # def render("report.json", %{score: %Score{winner: winner} = score}) do
-  #   {winning_user, winning_score} = if(winner == :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
-  #   {_losing_user, losing_score} = if(winner != :left, do: {score.left, score.left_score}, else: {score.right, score.right_score})
-
-  #   %{
-  #     response_type: "in_channel",
-  #     text:
-  #       "<@#{winning_user.user.slack_id}> heeft gewonnen met #{winning_score}:#{losing_score}. <@#{score.right.slack_id}> moet dit bevestigen. Dit gebeurt anders automatisch na 24 uur."
-  #   }
-  # end
 end

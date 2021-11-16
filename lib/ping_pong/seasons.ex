@@ -8,7 +8,8 @@ defmodule PingPong.Seasons do
 
   alias PingPong.Seasons.Season
   alias PingPong.Seasons.SeasonUser
-  alias PingPong.Scores.ScoreView
+  alias PingPong.Scores.Score
+  alias PingPong.Scores.ScoreUser
   alias PingPong.Scores.Elo
 
   @doc """
@@ -87,122 +88,69 @@ defmodule PingPong.Seasons do
         on: c.id == r.id and r.row_number <= 10,
         order_by: :inserted_at
 
-    winnings = from(c in ScoreView, where: not is_nil(c.confirmed_at))
-
-    losses = from(c in ScoreView, where: not is_nil(c.confirmed_at))
-
     season_users =
-      from(s in SeasonUser,
+      from s in SeasonUser,
         order_by: [desc: s.elo]
+
+    season =
+      season
+      |> Repo.preload(
+        season_users: {season_users, [elo_history: elo_history]},
+        users: [:teams]
+      )
+
+    score_users =
+      Repo.all(
+        from c in ScoreUser,
+          join: s in assoc(c, :score),
+          where:
+            (not is_nil(s.confirmed_at) and is_nil(s.denied_at)) and
+              c.season_user_id in ^Enum.map(season.season_users, & &1.id),
+          group_by: c.season_user_id,
+          select: %{
+            id: c.season_user_id,
+            won: sum(fragment("case when ? = ? then 1 else 0 end", c.side, s.winner)),
+            lost: sum(fragment("case when ? != ? then 1 else 0 end", c.side, s.winner))
+          }
       )
 
     season
-    |> Repo.preload(
-      season_users: {season_users, [elo_history: elo_history, winnings: winnings, losses: losses]},
-      users: [:teams]
-    )
+    |> Map.update!(:season_users, fn season_users ->
+      for %{id: id} = season_user <- season_users do
+        with %{won: won, lost: lost} <- Enum.find(score_users, &(&1.id == id)) do
+          %{season_user | count_won: won, count_lost: lost}
+        else
+          _ ->
+            %{season_user | count_won: 0, count_lost: 0}
+        end
+      end
+    end)
   end
 
-  # def list_season_users(id) do
-  #   ranking_query =
-  #     from c in EloHistory,
-  #       select: %{id: c.id, row_number: over(row_number(), :users_partition)},
-  #       windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
+  def load_user_scores(%Season{} = season) do
+    scores =
+      Repo.all(
+        from c in Score,
+          join: s in assoc(c, :score_users),
+          join: su in assoc(s, :season_user),
+          join: u in assoc(su, :user),
+          preload: [score_users: {s, [season_user: {su, [user: u]}]}],
+          order_by: [desc: c.confirmed_at],
+          where:
+            (not is_nil(c.confirmed_at) and is_nil(c.denied_at)) and
+              s.season_user_id in ^Enum.map(season.season_users, & &1.id)
+      )
 
-  #   history_query =
-  #     from c in EloHistory,
-  #       join: r in subquery(ranking_query),
-  #       on: c.id == r.id and r.row_number <= 10,
-  #       where: c.season_id == ^id,
-  #       order_by: :inserted_at
+    season
+    |> Map.update!(:season_users, fn season_users ->
+      for %{id: id} = season_user <- season_users do
+        scores =
+          Enum.filter(scores, fn %{score_users: users} ->
+            Enum.find(users, &(&1.season_user_id == id))
+          end)
 
-  #   from(u in User,
-  #     # as: :user,
-  #     join: c in SeasonUser,
-  #     on: c.user_id == u.id,
-  #     where: c.season_id == ^id,
-  #     # where:
-  #     #   exists(
-  #     #     from(
-  #     #       c in "season_user",
-  #     #       where: c.season_id == ^id and c.user_id == parent_as(:user).id,
-  #     #       select: 1
-  #     #     )
-  #     #   ),
-  #     order_by: [desc: u.elo],
-  #     preload: [user_seasons: c]
-  #   )
-  #   |> Repo.all()
-  #   |> Repo.preload(
-  #     winnings: from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and c.season_id == ^id),
-  #     losses: from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and c.season_id == ^id),
-  #     # user_seasons: from(c in seasonUser, where: c.season_id == ^id),
-  #     elo_history: history_query
-  #   )
-  # end
-
-  # @doc """
-  # Creates a season.
-
-  # ## Examples
-
-  #     iex> create_season(%{field: value})
-  #     {:ok, %Season{}}
-
-  #     iex> create_season(%{field: bad_value})
-  #     {:error, %Ecto.Changeset{}}
-
-  # """
-  # def create_season(attrs \\ %{}) do
-  #   %Season{}
-  #   |> Season.changeset(attrs)
-  #   |> Repo.insert()
-  # end
-
-  # @doc """
-  # Updates a season.
-
-  # ## Examples
-
-  #     iex> update_season(season, %{field: new_value})
-  #     {:ok, %Season{}}
-
-  #     iex> update_season(season, %{field: bad_value})
-  #     {:error, %Ecto.Changeset{}}
-
-  # """
-  # def update_season(%Season{} = season, attrs) do
-  #   season
-  #   |> Season.changeset(attrs)
-  #   |> Repo.update()
-  # end
-
-  # @doc """
-  # Deletes a season.
-
-  # ## Examples
-
-  #     iex> delete_season(season)
-  #     {:ok, %Season{}}
-
-  #     iex> delete_season(season)
-  #     {:error, %Ecto.Changeset{}}
-
-  # """
-  # def delete_season(%Season{} = season) do
-  #   Repo.delete(season)
-  # end
-
-  # @doc """
-  # Returns an `%Ecto.Changeset{}` for tracking season changes.
-
-  # ## Examples
-
-  #     iex> change_season(season)
-  #     %Ecto.Changeset{data: %Season{}}
-
-  # """
-  # def change_season(%Season{} = season, attrs \\ %{}) do
-  #   Season.changeset(season, attrs)
-  # end
+        %{season_user | scores: scores}
+      end
+    end)
+  end
 end

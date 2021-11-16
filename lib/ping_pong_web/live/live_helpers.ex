@@ -20,4 +20,22 @@ defmodule PingPongWeb.LiveHelpers do
     modal_opts = [id: :modal, return_to: path, component: component, opts: opts]
     live_component(PingPongWeb.ModalComponent, modal_opts)
   end
+
+  def humanize_list(list, fun) do
+    count = length(list)
+
+    for {item, index} <- Enum.with_index(list, 1), reduce: "" do
+      acc ->
+        case index do
+          x when x == count ->
+            acc <> fun.(item)
+
+          x when x == count - 1 ->
+            acc <> fun.(item) <> " en "
+
+          _ ->
+            acc <> fun.(item) <> ", "
+        end
+    end
+  end
 end

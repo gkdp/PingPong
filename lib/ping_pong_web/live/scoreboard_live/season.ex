@@ -14,6 +14,11 @@ defmodule PingPongWeb.ScoreboardLive.Season do
     season =
       Seasons.get_active_season!()
       |> Seasons.load_users()
+      |> Seasons.load_user_scores()
+
+    # with user <- Enum.find(season.season_users, &(&1.id == 13)) do
+    #   IO.inspect user
+    # end
 
     changeset =
       changeset(%{
@@ -79,7 +84,7 @@ defmodule PingPongWeb.ScoreboardLive.Season do
       |> then(fn users ->
         if Ecto.Changeset.get_field(changeset, :hide_players) do
           users
-          |> Enum.filter(&(!Enum.empty?(&1.winnings) || !Enum.empty?(&1.losses)))
+          |> Enum.filter(&(&1.count_won > 0 || &1.count_lost > 0))
         else
           users
         end

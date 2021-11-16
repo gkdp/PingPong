@@ -10,39 +10,16 @@ defmodule PingPong.Scoreboard do
   alias PingPong.Repo
 
   alias PingPong.Commands.Report
+  alias PingPong.Commands.DoublesReport
   alias PingPong.Scoreboard.User
+  alias PingPong.Seasons.Season
   alias PingPong.Seasons.SeasonUser
   alias PingPong.Scores.Score
-  alias PingPong.Scores.ScoreView
+  alias PingPong.Scores.ScoreUser
   alias PingPong.Scores.Elo, as: EloHistory
   alias PingPong.Seasons
   alias Slack.Web.Users
   alias PingPong.Slack
-
-  # def list_users do
-  #   ranking_query =
-  #     from c in EloHistory,
-  #       select: %{id: c.id, row_number: over(row_number(), :users_partition)},
-  #       windows: [users_partition: [partition_by: :user_id, order_by: [desc: :inserted_at]]]
-
-  #   history_query =
-  #     from c in EloHistory,
-  #       join: r in subquery(ranking_query),
-  #       on: c.id == r.id and r.row_number <= 10,
-  #       order_by: :inserted_at
-
-  #   from(u in User,
-  #     order_by: [desc: u.elo]
-  #   )
-  #   |> Repo.all()
-  #   |> Repo.preload(
-  #     winnings:
-  #       from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.season_id)),
-  #     losses:
-  #       from(c in ScoreWinner, where: not is_nil(c.confirmed_at) and is_nil(c.season_id)),
-  #     elo_history: history_query
-  #   )
-  # end
 
   @doc """
   Gets a single score.
@@ -60,7 +37,7 @@ defmodule PingPong.Scoreboard do
   """
   def get_score!(id) do
     Repo.get!(Score, id)
-    |> Repo.preload([left: [:user], right: [:user]])
+    |> Repo.preload([:users])
   end
 
   def get_user_by_slack(id) when is_binary(id) do
@@ -85,7 +62,7 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  def get_or_create_season_user_for_user(%User{} = user, season_id) do
+  def set_or_create_season_user_for_user(%User{} = user, season_id) do
     user =
       user
       |> Repo.preload(season_user: from(u in SeasonUser, where: u.season_id == ^season_id))
@@ -110,30 +87,68 @@ defmodule PingPong.Scoreboard do
   # end
 
   def process_scores(%Report{} = report) do
-    with {:ok, left} <- get_or_create_user_by_slack(report.left_id),
-         {:ok, right} <- get_or_create_user_by_slack(report.right_id),
-         %Seasons.Season{} = season <- Seasons.get_active_season() do
-      processed =
-        for %Report.Score{} = score <- report.scores do
-          left = get_or_create_season_user_for_user(left, season.id)
-          right = get_or_create_season_user_for_user(right, season.id)
+    left = get_or_create_user_by_slack(report.left_id)
+    right = get_or_create_user_by_slack(report.right_id)
 
-          # Session ding
+    with %Season{id: season_id} <- Seasons.get_active_season(),
+         {:ok, left} <- left,
+         {:ok, right} <- right do
+      left = set_or_create_season_user_for_user(left, season_id)
+      right = set_or_create_season_user_for_user(right, season_id)
+
+      scores =
+        report.scores
+        |> Enum.map(fn score ->
           with {:ok, final} <- process_score(left, right, score) do
             final
           else
             _ -> nil
           end
-        end
+        end)
+        |> Enum.filter(&(!is_nil(&1)))
 
-      {:ok, Enum.filter(processed, &(!is_nil(&1)))}
+      {:ok, scores}
     else
       nil -> {:error, :season_not_found}
       _ -> {:error, nil}
     end
   end
 
-  defp process_score(left, right, %Report.Score{} = score) do
+  def process_scores(%DoublesReport{} = report) do
+    left = get_or_create_user_by_slack(report.left_id)
+    left_buddy = get_or_create_user_by_slack(report.left_buddy_id)
+    right = get_or_create_user_by_slack(report.right_id)
+    right_buddy = get_or_create_user_by_slack(report.right_buddy_id)
+
+    with %Season{id: season_id} <- Seasons.get_active_season(),
+         {:ok, left} <- left,
+         {:ok, left_buddy} <- left_buddy,
+         {:ok, right} <- right,
+         {:ok, right_buddy} <- right_buddy do
+      left = set_or_create_season_user_for_user(left, season_id)
+      left_buddy = set_or_create_season_user_for_user(left_buddy, season_id)
+      right = set_or_create_season_user_for_user(right, season_id)
+      right_buddy = set_or_create_season_user_for_user(right_buddy, season_id)
+
+      scores =
+        report.scores
+        |> Enum.map(fn score ->
+          with {:ok, final} <- process_score({left, left_buddy}, {right, right_buddy}, score) do
+            final
+          else
+            _ -> nil
+          end
+        end)
+        |> Enum.filter(&(!is_nil(&1)))
+
+      {:ok, scores}
+    else
+      nil -> {:error, :season_not_found}
+      _ -> {:error, nil}
+    end
+  end
+
+  defp process_score({left, left_buddy}, {right, right_buddy}, %DoublesReport.Score{} = score) do
     winner =
       cond do
         score.left > score.right -> :left
@@ -144,12 +159,16 @@ defmodule PingPong.Scoreboard do
     inserted_score =
       Repo.insert(
         Score.changeset(%Score{}, %{
-          left_id: left.season_user.id,
-          right_id: right.season_user.id,
           winner: winner,
           left_score: score.left,
           right_score: score.right
         })
+        |> Ecto.Changeset.put_assoc(:score_users, [
+          %ScoreUser{side: :left, season_user_id: left.season_user.id},
+          %ScoreUser{side: :left, season_user_id: left_buddy.season_user.id},
+          %ScoreUser{side: :right, season_user_id: right.season_user.id},
+          %ScoreUser{side: :right, season_user_id: right_buddy.season_user.id}
+        ])
       )
 
     {winning_user, winning_score} =
@@ -170,58 +189,185 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  def confirm_score(%Score{winner: winner} = score) do
-    winning_user = if(winner == :left, do: score.left, else: score.right)
-    losing_user = if(winner != :left, do: score.left, else: score.right)
+  defp process_score(left, right, %Report.Score{} = score) do
+    winner =
+      cond do
+        score.left > score.right -> :left
+        score.left < score.right -> :right
+        true -> :draw
+      end
 
+    inserted_score =
+      Repo.insert(
+        Score.changeset(%Score{}, %{
+          winner: winner,
+          left_score: score.left,
+          right_score: score.right
+        })
+        |> Ecto.Changeset.put_assoc(:score_users, [
+          %ScoreUser{side: :left, season_user_id: left.season_user.id},
+          %ScoreUser{side: :right, season_user_id: right.season_user.id}
+        ])
+      )
+
+    {winning_user, winning_score} =
+      if(winner == :left, do: {left, score.left}, else: {right, score.right})
+
+    {losing_user, losing_score} =
+      if(winner != :left, do: {left, score.left}, else: {right, score.right})
+
+    with {:ok, final_score} = tuple <- inserted_score do
+      Slack.send_confirm_message(
+        {winning_user, winning_score},
+        {losing_user, losing_score},
+        right,
+        final_score
+      )
+
+      tuple
+    end
+  end
+
+  def confirm_score(%Score{} = score) do
+    confirm_score(
+      score,
+      Score.get_winning_score_users(score),
+      Score.get_losing_score_users(score)
+    )
+  end
+
+  def confirm_score(score, [%ScoreUser{} = winner], [%ScoreUser{} = loser]) do
     wins =
       Repo.aggregate(
-        from(s in ScoreView,
-          where: not is_nil(s.confirmed_at) and s.won_by_id == ^winning_user.id
+        from(s in Score,
+          join: u in assoc(s, :score_users),
+          where:
+            not is_nil(s.confirmed_at) and
+              u.season_user_id == ^winner.season_user_id and
+              u.side == s.winner
         ),
         :count
       )
 
     {winning_elo, losing_elo} =
       Elo.rate(
-        winning_user.elo,
-        losing_user.elo,
+        winner.season_user.elo,
+        loser.season_user.elo,
         :win,
         round: true,
-        k_factor: get_k_factor(wins, winning_user.elo)
+        k_factor: get_k_factor(wins, winner.season_user.elo)
       )
 
-    time = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
-
     Repo.transaction(fn ->
-      Repo.update!(change(winning_user, elo: winning_elo))
-      Repo.update!(change(losing_user, elo: losing_elo))
-
-      Repo.insert!(
-        change(%EloHistory{}, %{
-          season_user_id: winning_user.id,
-          score_id: score.id,
+      Repo.update!(
+        SeasonUser.changeset(winner.season_user, %{
           elo: winning_elo
         })
       )
 
-      Repo.insert!(
-        change(%EloHistory{}, %{
-          season_user_id: losing_user.id,
-          score_id: score.id,
+      Repo.update!(
+        SeasonUser.changeset(loser.season_user, %{
           elo: losing_elo
         })
       )
 
-      Repo.update!(change(score, confirmed_at: time))
-    end)
+      Repo.insert!(
+        EloHistory.changeset(%EloHistory{}, %{
+          elo: winning_elo,
+          season_user_id: winner.season_user_id,
+          score_id: score.id
+        })
+      )
 
-    %Score{score | confirmed_at: time}
+      Repo.insert!(
+        EloHistory.changeset(%EloHistory{}, %{
+          elo: losing_elo,
+          season_user_id: loser.season_user_id,
+          score_id: score.id
+        })
+      )
+
+      Repo.update!(
+        change(score, %{
+          confirmed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+        })
+      )
+    end)
+  end
+
+  def confirm_score(score, [_ | _] = winners, [_ | _] = losers) do
+    winning_elo_sum =
+      Enum.reduce(winners, 0, fn winner, acc ->
+        acc + winner.season_user.elo
+      end)
+
+    losing_elo_sum =
+      Enum.reduce(losers, 0, fn loser, acc ->
+        acc + loser.season_user.elo
+      end)
+
+    {winning_elo, losing_elo} =
+      Elo.rate(
+        winning_elo_sum,
+        losing_elo_sum,
+        :win,
+        round: true,
+        k_factor: 10
+      )
+
+    rest_winning_elo = winning_elo - winning_elo_sum
+    rest_losing_elo = losing_elo - losing_elo_sum
+
+    Repo.transaction(fn ->
+      for winner <- winners do
+        elo = winner.season_user.elo + rest_winning_elo
+
+        Repo.update!(
+          SeasonUser.changeset(winner.season_user, %{
+            elo: elo
+          })
+        )
+
+        Repo.insert!(
+          EloHistory.changeset(%EloHistory{}, %{
+            elo: elo,
+            season_user_id: winner.season_user_id,
+            score_id: score.id
+          })
+        )
+      end
+
+      for loser <- losers do
+        elo = loser.season_user.elo + rest_losing_elo
+
+        Repo.update!(
+          SeasonUser.changeset(loser.season_user, %{
+            elo: elo
+          })
+        )
+
+        Repo.insert!(
+          EloHistory.changeset(%EloHistory{}, %{
+            elo: elo,
+            season_user_id: loser.season_user_id,
+            score_id: score.id
+          })
+        )
+      end
+
+      Repo.update!(
+        change(score, %{
+          confirmed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+        })
+      )
+    end)
   end
 
   def deny_score(%Score{} = score) do
     Repo.update!(
-      change(score, denied_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+      change(score, %{
+        denied_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+      })
     )
   end
 
