@@ -19,6 +19,8 @@
     "@fnando/sparkline": "^0.3.10",
     "@tailwindcss/custom-forms": "^0.2.1",
     "@tailwindcss/forms": "^0.3.4",
-    "alpinejs": "3.3.0"
+    "alpinejs": "3.3.0",
+    "crossfilter2": "^1.5.4",
+    "dc": "^4.2.7"
   }
 }

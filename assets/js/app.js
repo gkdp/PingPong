@@ -23,6 +23,8 @@ import { LiveSocket } from 'phoenix_live_view'
 import Alpine from 'alpinejs'
 import collapse from '@alpinejs/collapse'
 import sparkline from '@fnando/sparkline'
+import { PieChart } from 'dc'
+import crossfilter from 'crossfilter2'
 import topbar from '../vendor/topbar'
 
 window.Alpine = Alpine
@@ -124,6 +126,49 @@ Alpine.directive('sparkline', (el, { expression }, { evaluate }) => {
       tooltip.hidden = true
     },
   })
+})
+
+Alpine.directive('pie', (el, { expression }, { evaluate }) => {
+  const chart = new PieChart(el)
+
+  const data = [
+    {id: 1, won: 1},
+    {id: 2, won: 1},
+    {id: 3, won: 1},
+    {id: 4, won: 0},
+    {id: 5, won: 0},
+  ]
+
+  var ndx           = crossfilter(data),
+      runDimension  = ndx.dimension(function(d) {return d.won})
+      speedSumGroup = runDimension.group();
+
+  chart
+    .width(200)
+    .height(200)
+    .slicesCap(4)
+    .innerRadius(100)
+    .dimension(runDimension)
+    .group(speedSumGroup)
+
+    // .group(speedSumGroup)
+    // .legend(dc.legend().highlightSelected(true))
+
+    // workaround for #703: not enough data is accessible through .label() to display percentages
+    // .on('pretransition', function (chart) {
+    //   chart.selectAll('text.pie-slice').text(function (d) {
+    //     return (
+    //       d.data.key +
+    //       ' ' +
+    //       dc.utils.printSingleValue(
+    //         ((d.endAngle - d.startAngle) / (2 * Math.PI)) * 100
+    //       ) +
+    //       '%'
+    //     )
+    //   })
+    // })
+
+  chart.render()
 })
 
 // Show progress bar on live navigation and form submits

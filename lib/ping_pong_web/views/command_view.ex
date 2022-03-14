@@ -68,7 +68,7 @@ defmodule PingPongWeb.CommandView do
 
   def render("report.json", %{scores: scores}) do
     {winners, losers} =
-      for %Score{winner: winner, season_users: season_users} = score <- scores, reduce: {[], []} do
+      for %Score{winner: winner} = score <- scores, reduce: {[], []} do
         {prev_winners, prev_losers} ->
           winners =
             for %{season_user: season_user} <- Score.get_score_users(score, winner) do

@@ -2,9 +2,9 @@ import Config
 
 # Configure your database
 config :ping_pong, PingPong.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "ping_pong_prod",
+  username: "roan",
+  password: "",
+  database: "ping_pong_dev",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

@@ -40,6 +40,15 @@ defmodule PingPong.Scoreboard do
     |> Repo.preload([:users])
   end
 
+  def get_user(id) do
+    Repo.get!(User, id)
+  end
+
+  def load_seasons(%User{} = user) do
+    user
+    |> Repo.preload(:season_users)
+  end
+
   def get_user_by_slack(id) when is_binary(id) do
     Repo.get_by(User, slack_id: id)
   end
