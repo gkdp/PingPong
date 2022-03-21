@@ -67,7 +67,7 @@
           </div>
 
           <%= for {user, position} <- Enum.with_index(@users, 1) do %>
-            <PingPongWeb.ScoreboardLive.Components.user_row user={user} position={position} lowest_elo={@lowest_elo} hide_teams={@hide_teams} others={@season.season_users} />
+            <PingPongWeb.ScoreboardLive.Components.user_row socket={@socket} user={user} position={position} lowest_elo={@lowest_elo} hide_teams={@hide_teams} others={@season.season_users} />
           <% end %>
         </div>
 

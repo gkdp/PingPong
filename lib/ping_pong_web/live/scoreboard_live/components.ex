@@ -10,9 +10,12 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     ~H"""
     <div>
       <div class="grid grid-cols-8 rounded items-center">
-        <div class="text-center">
-          <span class={"#{get_position_styling(@position)} font-bold"}><%= @position %></span>
-        </div>
+        <%= if Map.has_key?(assigns, :position) do %>
+          <div class="text-center">
+            <span class={"#{get_position_styling(@position)} font-bold"}><%= @position %></span>
+          </div>
+        <% end %>
+
         <div class="col-span-4 px-3">
           <a class="text-md hover:underline dark:text-white" href="#" x-on:click.prevent={"expanded = expanded == #{season_user.id} ? null : #{season_user.id}; update()"}><%= User.get_slack_name(user) %></a>
 
@@ -41,6 +44,10 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <%= get_last_played_text(season_user, @others) %> <%= get_opponent_text(season_user, @position, @others) %>
         </div>
 
+        <div class="bg-gray-100 p-6 pt-0 text-sm">
+          <%= live_redirect "Ga naar profiel", to: PingPongWeb.Router.Helpers.player_player_path(@socket, :show, user.id) %>
+        </div>
+
         <% last_scores = SeasonUser.get_scores(season_user, 5) %>
 
         <%= if length(last_scores) > 1 do %>
@@ -62,6 +69,28 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     """
   end
 
+  def user_minimal_row(
+        %{score: score, season_users: season_users, season_user: season_user} = assigns
+      ) do
+    ~H"""
+    <div>
+      <div class="grid grid-cols-5 rounded items-center">
+        <div class="col-span-3 px-3">
+          <%= Enum.join(Enum.map(season_users, &User.get_slack_name(&1.user)), ", ") %>
+        </div>
+        <div class="text-center">
+          <p class="text-md dark:text-white">
+            <%= get_status(season_user, score) %>
+          </p>
+        </div>
+        <div class="text-center">
+          <p class="text-md font-semibold dark:text-white"><%= get_score_text(season_user, score) %></p>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   defp get_last_played_text(season_user, others) do
     with %Score{} = score <- SeasonUser.get_last_score(season_user) do
       side = Score.get_side(score, season_user)
@@ -72,7 +101,8 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         end
 
       opponents =
-        for %{season_user_id: id} <- Score.get_score_users(score, if(side == :left, do: :right, else: :left)) do
+        for %{season_user_id: id} <-
+              Score.get_score_users(score, if(side == :left, do: :right, else: :left)) do
           Enum.find(others, &(&1.id == id))
         end
 
@@ -87,18 +117,27 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         if score.winner == side do
           "<span class=\"font-semibold\">" <> score_in_text <> "</span> gewonnen"
         else
-
           "<span class=\"font-semibold\">" <> score_in_text <> "</span> verloren"
         end
 
-      Phoenix.HTML.raw """
+      Phoenix.HTML.raw("""
       #{User.get_slack_name_short(season_user.user)} #{if length(players) == 1, do: "heeft", else: "hebben"} voor
-      het laatst gespeeld tegen #{humanize_list(opponents, &(User.get_slack_name_short(&1.user)))}
+      het laatst gespeeld tegen #{humanize_list(opponents, &User.get_slack_name_short(&1.user))}
       en #{if length(players) == 1, do: "heeft", else: "hebben"} met #{score_text}.
-      """
+      """)
     else
       _ ->
         "#{User.get_slack_name_short(season_user.user)} heeft nog niet gespeeld."
+    end
+  end
+
+  def get_status(season_user, score) do
+    side = Score.get_side(score, season_user)
+
+    if score.winner == side do
+      "Gewonnen"
+    else
+      "Verloren"
     end
   end
 
@@ -116,22 +155,22 @@ defmodule PingPongWeb.ScoreboardLive.Components do
       if score.winner == side do
         "<span class=\"font-semibold\">" <> score_in_text <> "</span>"
       else
-
         "<span class=\"font-semibold\">" <> score_in_text <> "</span>"
       end
 
-    Phoenix.HTML.raw score_text
+    Phoenix.HTML.raw(score_text)
   end
 
   def get_opponents_text(season_user, score, others) do
     side = Score.get_side(score, season_user)
 
     opponents =
-      for %{season_user_id: id} <- Score.get_score_users(score, if(side == :left, do: :right, else: :left)) do
+      for %{season_user_id: id} <-
+            Score.get_score_users(score, if(side == :left, do: :right, else: :left)) do
         Enum.find(others, &(&1.id == id))
       end
 
-    humanize_list(opponents, &(User.get_slack_name_short(&1.user)))
+    humanize_list(opponents, &User.get_slack_name_short(&1.user))
   end
 
   def get_opponent_text(season_user, position, others) do

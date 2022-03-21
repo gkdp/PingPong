@@ -74,6 +74,9 @@ defmodule PingPongWeb.Router do
     pipe_through [:browser]
 
     live "/scoreboard/season", ScoreboardLive.Season, :index
+    live "/scoreboard/season/:id", ScoreboardLive.Season, :show
+
+    live "/player/:id", PlayerLive.Player, :show
   end
 
   scope "/slack", PingPongWeb do

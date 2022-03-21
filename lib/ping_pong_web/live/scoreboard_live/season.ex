@@ -10,9 +10,12 @@ defmodule PingPongWeb.ScoreboardLive.Season do
   end
 
   @impl true
-  def handle_params(_params, _, socket) do
+  def handle_params(params, _, socket) do
     season =
-      Seasons.get_active_season!()
+      if(Map.has_key?(params, "id"),
+        do: Seasons.get_season!(params["id"]),
+        else: Seasons.get_active_season!()
+      )
       |> Seasons.load_users()
       |> Seasons.load_user_scores()
 

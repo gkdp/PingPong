@@ -49,6 +49,24 @@ defmodule PingPong.Scoreboard do
     |> Repo.preload(:season_users)
   end
 
+  def load_seasons_and_scores(%User{} = user) do
+    elo_history_partition_query =
+      from c in PingPong.Scores.Elo,
+        select: %{id: c.id, row_number: over(row_number(), :users_partition)},
+        windows: [
+          users_partition: [partition_by: :season_user_id, order_by: [desc: :inserted_at]]
+        ]
+
+    elo_history =
+      from c in PingPong.Scores.Elo,
+        join: r in subquery(elo_history_partition_query),
+        on: c.id == r.id and r.row_number <= 10,
+        order_by: :inserted_at
+
+    user
+    |> Repo.preload(season_users: [elo_history: elo_history, scores: [season_users: [:user]], season: []])
+  end
+
   def get_user_by_slack(id) when is_binary(id) do
     Repo.get_by(User, slack_id: id)
   end
@@ -92,6 +110,11 @@ defmodule PingPong.Scoreboard do
 
   # def process_scores(%Report{left_id: left_id, right_id: right_id})
   #     when left_id == right_id do
+  #   {:error, :equals}
+  # end
+
+  # def process_scores(%DoublesReport{left_id: left_id, left_buddy_id: left_buddy_id, right_id: right_id, right_buddy_id: right_buddy_id})
+  #     when left_id == right_id or left_id == left_buddy_id or right_id == right_buddy_id do
   #   {:error, :equals}
   # end
 
@@ -386,12 +409,19 @@ defmodule PingPong.Scoreboard do
         where: s.inserted_at <= ago(1, "day") and is_nil(s.confirmed_at) and is_nil(s.denied_at)
       )
       |> Repo.all()
-      |> Repo.preload([:left, :right])
+      |> Repo.preload([:users])
 
     for score <- scores do
+      right =
+        Score.get_score_users(score, :right)
+        |> Enum.map(&(&1.season_user.user))
+        |> List.first()
+
       Logger.info("Auto confirm score", score_id: score.id)
 
-      Slack.send_confirmation_message(confirm_score(score))
+      {:ok, score} = confirm_score(score)
+
+      Slack.send_confirmation_message(score, right.slack_id, true)
     end
   end
 

@@ -59,6 +59,19 @@ defmodule PingPong.Slack do
     )
   end
 
+  def send_confirmation_message(%Score{confirmed_at: time} = score, slack_id, true) when not is_nil(time) do
+    left =
+      Score.get_score_users(score, :left)
+      |> Enum.map(&(&1.season_user.user))
+
+    for user <- left do
+      Chat.post_message(
+        user.slack_id,
+        "<@#{slack_id}> heeft de score #{score.left_score}:#{score.right_score} automatisch bevestigd."
+      )
+    end
+  end
+
   def send_confirmation_message(%Score{confirmed_at: time} = score, slack_id) when not is_nil(time) do
     left =
       Score.get_score_users(score, :left)
