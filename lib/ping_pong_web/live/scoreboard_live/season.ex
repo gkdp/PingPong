@@ -19,14 +19,15 @@ defmodule PingPongWeb.ScoreboardLive.Season do
       |> Seasons.load_users()
       |> Seasons.load_user_scores()
 
-    # with user <- Enum.find(season.season_users, &(&1.id == 13)) do
-    #   IO.inspect user
-    # end
-
     changeset =
       changeset(%{
         hide_players: true,
-        hide_teams: false
+        hide_teams: false,
+        team:
+          case Map.get(params, "team") do
+            nil -> nil
+            id -> String.to_integer(id)
+          end
       })
 
     {:noreply,
@@ -35,6 +36,7 @@ defmodule PingPongWeb.ScoreboardLive.Season do
      |> assign(:season, season)
      |> assign(:teams, list_teams(season))
      |> assign(:lowest_elo, lowest_elo(season))
+     |> assign(:percentage, calculate_bar(season.start_at, season.end_at))
      |> assign_changeset(season, changeset)}
   end
 
@@ -115,5 +117,17 @@ defmodule PingPongWeb.ScoreboardLive.Season do
   defp changeset(params) do
     {%{}, @types}
     |> Ecto.Changeset.cast(params, Map.keys(@types))
+  end
+
+  defp calculate_bar(start_time, end_time) do
+    with %{} <- end_time,
+         days when days > 0 <- Timex.diff(end_time, NaiveDateTime.utc_now(), :days) do
+      all_days = Timex.diff(end_time, start_time, :days)
+
+      (all_days - days) / all_days * 100
+    else
+      nil -> 0
+      _ -> 100
+    end
   end
 end

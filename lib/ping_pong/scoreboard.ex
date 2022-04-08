@@ -44,6 +44,10 @@ defmodule PingPong.Scoreboard do
     Repo.get!(User, id)
   end
 
+  def get_teams() do
+    Repo.all(PingPong.Teams.Team)
+  end
+
   def load_seasons(%User{} = user) do
     user
     |> Repo.preload(:season_users)
@@ -108,15 +112,15 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  # def process_scores(%Report{left_id: left_id, right_id: right_id})
-  #     when left_id == right_id do
-  #   {:error, :equals}
-  # end
+  def process_scores(%Report{left_id: left_id, right_id: right_id})
+      when left_id == right_id do
+    {:error, :equals}
+  end
 
-  # def process_scores(%DoublesReport{left_id: left_id, left_buddy_id: left_buddy_id, right_id: right_id, right_buddy_id: right_buddy_id})
-  #     when left_id == right_id or left_id == left_buddy_id or right_id == right_buddy_id do
-  #   {:error, :equals}
-  # end
+  def process_scores(%DoublesReport{left_id: left_id, left_buddy_id: left_buddy_id, right_id: right_id, right_buddy_id: right_buddy_id})
+      when left_id == right_id or left_id == left_buddy_id or right_id == right_buddy_id do
+    {:error, :equals}
+  end
 
   def process_scores(%Report{} = report) do
     left = get_or_create_user_by_slack(report.left_id)

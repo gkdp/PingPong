@@ -45,7 +45,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         </div>
 
         <div class="bg-gray-100 p-6 pt-0 text-sm">
-          <%= live_redirect "Ga naar profiel", to: PingPongWeb.Router.Helpers.player_player_path(@socket, :show, user.id) %>
+          <%= live_redirect "Ga naar profiel", to: PingPongWeb.Router.Helpers.player_player_path(@socket, :show, user.id), class: "text-blue-500 hover:underline" %>
         </div>
 
         <% last_scores = SeasonUser.get_scores(season_user, 5) %>
@@ -75,8 +75,9 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     ~H"""
     <div>
       <div class="grid grid-cols-5 rounded items-center">
-        <div class="col-span-3 px-3">
-          <%= Enum.join(Enum.map(season_users, &User.get_slack_name(&1.user)), ", ") %>
+        <div class="col-span-3 px-3 flex flex-col">
+          <span><%= Enum.join(Enum.map(season_users, &User.get_slack_name(&1.user)), ", ") %></span>
+          <span class="text-gray-500 text-xs"><%= Timex.format!(score.inserted_at, "%d-%m-%Y %H:%M", :strftime) %></span>
         </div>
         <div class="text-center">
           <p class="text-md dark:text-white">
@@ -187,7 +188,12 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     end
   end
 
-  defp get_values(season_user, lowest_elo) do
+  defp get_values(season_user, _lowest_elo) do
+    lowest_elo =
+      season_user.elo_history
+      |> Enum.map(& &1.elo)
+      |> Enum.min(fn -> 1000 end)
+
     history =
       if length(season_user.elo_history) < 10 do
         [%{elo: 1000, inserted_at: season_user.inserted_at}] ++ season_user.elo_history

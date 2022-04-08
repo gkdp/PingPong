@@ -1,28 +1,32 @@
-<div class="py-8 h-full">
+<div class="pb-8 h-full">
   <div class="ping-pong w-full" style="min-height: 0px;">
-    <div class="container mx-auto mb-8">
-      <div class="sm:w-1/2 mx-auto bg-white dark:bg-gray-700 dark:text-white px-6 pt-4 pb-4 sm:rounded">
-        <div class="flex">
-          <div class="text-lg font-bold mb-2">
-            Tafeltennis seizoen '<%= @season.title %>'
+    <div class="bg-gradient-to-br from-blue-500 to-blue-400 py-8">
+      <div class="container mx-auto">
+        <div class="sm:w-1/2 mx-auto bg-white dark:bg-gray-700 dark:text-white px-6 pt-4 pb-4 sm:rounded overflow-hidden relative">
+          <div class="flex">
+            <div class="text-lg font-bold mb-2">
+              Tafeltennis seizoen '<%= @season.title %>'
+            </div>
           </div>
+
+          <p>
+            <%= raw ngettext "Er is %{users} deelnemende speler die bestaat uit %{teams}.",
+              "Er zijn %{users} deelnemende spelers die bestaan uit %{teams}.",
+              length(@season.users),
+              users: "<span class=\"font-semibold\">#{length(@season.users)}</span>",
+              teams: format_team_names(@teams)
+            %>
+
+            Het seizoen is gestart op <span class="font-semibold"><%= if !is_nil(@season.start_at), do: Timex.format!(@season.start_at, "%d-%m-%Y", :strftime), else: "Onbekend" %></span>
+            en <%= if !is_nil(@season.end_at), do: raw("eindigt op <span class=\"font-semibold\">#{Timex.format!(@season.end_at, "%d-%m-%Y", :strftime)}</span>."), else: "heeft nog geen einddatum." %>
+          </p>
+
+          <p class="mt-4 hidden">
+            - is op dit moment aan het winnen! -, jij maakt de meeste kans om van Jurre te winnen, grijp je kans!
+          </p>
+
+          <div class="absolute bottom-0 left-0 h-1 bg-black" style={"width: #{@percentage}%"}></div>
         </div>
-
-        <p>
-          <%= raw ngettext "Er is %{users} deelnemende speler die bestaat uit %{teams}.",
-            "Er zijn %{users} deelnemende spelers die bestaan uit %{teams}.",
-            length(@season.users),
-            users: "<span class=\"font-semibold\">#{length(@season.users)}</span>",
-            teams: format_team_names(@teams)
-          %>
-
-          Het seizoen is gestart op <span class="font-semibold"><%= if !is_nil(@season.start_at), do: Timex.format!(@season.start_at, "%d-%m-%Y", :strftime), else: "Onbekend" %></span>
-          en <%= if !is_nil(@season.end_at), do: raw("eindigt op <span class=\"font-semibold\">#{Timex.format!(@season.end_at, "%d-%m-%Y", :strftime)}</span>."), else: "heeft nog geen einddatum." %>
-        </p>
-
-        <p class="mt-4 hidden">
-          - is op dit moment aan het winnen! -, jij maakt de meeste kans om van Jurre te winnen, grijp je kans!
-        </p>
       </div>
     </div>
 
