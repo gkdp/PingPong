@@ -52,9 +52,8 @@
               <div class="space-y-8 md:w-2/3 pb-6 px-2 sm:px-0 self-start">
                 <div class="grid gap-y-4 w-full">
                   <div class="grid grid-cols-5 items-center text-black dark:text-gray-300 font-bold border-t pt-6">
-                    <div class="col-span-4 px-3">
-                      Seizoen '<%= season_user.season.title %>'
-                    </div>
+                    <%= live_redirect "Seizoen '#{season_user.season.title}'", to: Routes.scoreboard_season_url(@socket, :show, season_user.season.id),
+                      class: "col-span-4 px-3 hover:underline" %>
 
                     <div class="text-center relative rounded overflow-hidden">
                       <p class="relative font-semibold dark:text-white text-md z-10 text-shadow pointer-events-none"><%= season_user.elo %></p>
@@ -76,7 +75,7 @@
                   </div>
 
                   <%= for {score, season_users} <- Enum.take(scores, 10) do %>
-                    <PingPongWeb.ScoreboardLive.Components.user_minimal_row user={@user} season_user={season_user} score={score} season_users={season_users} hide_teams={true} />
+                    <PingPongWeb.ScoreboardLive.Components.user_minimal_row socket={@socket} user={@user} season_user={season_user} score={score} season_users={season_users} hide_teams={true} />
                   <% end %>
 
                   <%= if length(scores) > 10 do %>

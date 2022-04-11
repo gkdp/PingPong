@@ -68,7 +68,7 @@ defmodule PingPong.Scoreboard do
         order_by: :inserted_at
 
     user
-    |> Repo.preload(season_users: [elo_history: elo_history, scores: [season_users: [:user]], season: []])
+    |> Repo.preload(season_users: [elo_history: elo_history, scores: {from(c in Score, where: not is_nil(c.confirmed_at)), [season_users: [:user]]}, season: []])
   end
 
   def get_user_by_slack(id) when is_binary(id) do

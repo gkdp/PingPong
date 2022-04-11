@@ -59,6 +59,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
                 <tr>
                   <td class="whitespace-nowrap pr-4" style="width: 1%;"><%= get_score_text(season_user, score) %></td>
                   <td><%= get_opponents_text(season_user, score, @others) %></td>
+                  <td><span class="text-gray-400 text-xs"><%= Timex.format!(score.confirmed_at, "%d-%m-%Y %H:%M", :strftime) %></span></td>
                 </tr>
               <% end %>
             </table>
@@ -76,8 +77,14 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     <div>
       <div class="grid grid-cols-5 rounded items-center">
         <div class="col-span-3 px-3 flex flex-col">
-          <span><%= Enum.join(Enum.map(season_users, &User.get_slack_name(&1.user)), ", ") %></span>
-          <span class="text-gray-500 text-xs"><%= Timex.format!(score.inserted_at, "%d-%m-%Y %H:%M", :strftime) %></span>
+          <div class="space-x-2">
+            <%= for season_user <- season_users do %>
+              <%= live_redirect User.get_slack_name(season_user.user), to: PingPongWeb.Router.Helpers.player_player_path(@socket, :show, season_user.user_id),
+                class: "hover:underline" %>
+            <% end %>
+          </div>
+
+          <span class="text-gray-400 text-xs"><%= Timex.format!(score.confirmed_at, "%d-%m-%Y %H:%M", :strftime) %></span>
         </div>
         <div class="text-center">
           <p class="text-md dark:text-white">
