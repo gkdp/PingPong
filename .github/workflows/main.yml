@@ -73,7 +73,7 @@ jobs:
           envs: APP_NAME
           script: |
             # Get version
-            VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+            VERSION=$(git rev-parse --short HEAD)
             
             docker pull dastin/$APP_NAME:$VERSION
             docker service update --image dastin/$APP_NAME:$VERSION ${APP_NAME}_web
