@@ -1,0 +1,79 @@
+name: Docker
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - v*
+  pull_request:
+
+env:
+  APP_NAME: ping_pong
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+#     if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: |
+          APP_VSN=$(grep 'version:' mix.exs | cut -d '"' -f2)
+
+          docker build \
+            --build-arg APP_NAME=$APP_NAME \
+            --build-arg APP_VSN=$APP_VSN \
+            -t $APP_NAME .
+
+      - name: Log into registry
+        run: echo "${{ secrets.DOCKER_SECRET }}" | docker login -u dastin --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=dastin/$APP_NAME
+
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+
+          APP_VSN=$(grep 'version:' mix.exs | cut -d '"' -f2)
+          BUILD=$(git rev-parse --short HEAD)
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $APP_NAME $IMAGE_ID:$APP_VSN-$BUILD
+          docker tag $APP_NAME $IMAGE_ID:$APP_VSN
+          docker tag $APP_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$APP_VSN-$BUILD
+          docker push $IMAGE_ID:$APP_VSN
+          docker push $IMAGE_ID:$VERSION
+
+  update:
+    needs: push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy on staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: APP_NAME
+          script: |
+            # Get version
+            APP_VSN=$(grep 'version:' mix.exs | cut -d '"' -f2)
+            
+            docker pull dastin/$APP_NAME:$APP_VSN
+            docker service update --image dastin/$APP_NAME:$APP_VSN ${APP_NAME}_web
