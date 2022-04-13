@@ -66,16 +66,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      
       - name: Deploy on staging
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          envs: APP_NAME
+          envs: APP_NAME,SHORT_SHA
           script: |
-            # Get version
-            VERSION=$(git rev-parse --short HEAD)
-            
-            docker pull dastin/$APP_NAME:$VERSION
-            docker service update --image dastin/$APP_NAME:$VERSION ${APP_NAME}_web
+            docker pull dastin/$APP_NAME:$SHORT_SHA
+            docker service update --image dastin/$APP_NAME:$SHORT_SHA ${APP_NAME}_web
