@@ -433,6 +433,7 @@ defmodule PingPong.Scoreboard do
     cond do
       wins <= 10 -> 60
       elo >= 2000 -> 10
+      elo <= 950 -> 35
       true -> 25
     end
   end

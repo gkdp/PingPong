@@ -36,6 +36,7 @@ COPY lib lib
 # your Elixir templates, you will need to move the asset compilation
 # step down so that `lib` is available.
 COPY assets assets
+RUN mix cmd --cd assets npm ci
 RUN mix assets.deploy
 
 # compile and build the release
