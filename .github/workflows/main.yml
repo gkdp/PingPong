@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-7`" >> $GITHUB_ENV
         
       - name: Add APP_VSN env property with mix verison
         run: echo "APP_VSN=`grep 'version:' mix.exs | cut -d '\"' -f2`" >> $GITHUB_ENV
