@@ -36,7 +36,7 @@
         <div class="hidden lg:grid gap-y-4 lg:w-1/4 py-6 px-2 justify-end self-start"></div>
 
         <div class="w-2/4 flex py-6 px-3 jjbg-gray-100">
-          <%= live_redirect "Terug naar het seizoen", to: PingPongWeb.Router.Helpers.scoreboard_season_url(@socket, :index),
+          <%= live_redirect "Terug naar het seizoen", to: PingPongWeb.Router.Helpers.scoreboard_season_path(@socket, :index),
             class: "text-blue-500 hover:underline" %>
         </div>
 
