@@ -14,6 +14,7 @@ defmodule PingPongWeb.CommandController do
       with {:ok, scores} <- Scoreboard.process_scores(report) do
         conn
         |> render("report.json",
+          doubles: false,
           scores: PingPong.Repo.preload(scores, [:users])
         )
       else
@@ -37,6 +38,7 @@ defmodule PingPongWeb.CommandController do
       with {:ok, scores} <- Scoreboard.process_scores(report) do
         conn
         |> render("report.json",
+          doubles: true,
           scores: PingPong.Repo.preload(scores, [:users])
         )
       else

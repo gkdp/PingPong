@@ -54,10 +54,11 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <div class="bg-gray-100 px-6 pb-6 text-sm">
             <p><%= length(last_scores) %> laatst gespeelde matches:</p>
 
-            <table class="table mt-2 w-1/2">
+            <table class="table mt-2 w-full">
               <%= for score <- SeasonUser.get_scores(season_user, 5) do %>
                 <tr>
                   <td class="whitespace-nowrap pr-4" style="width: 1%;"><%= get_score_text(season_user, score) %></td>
+                  <td class="whitespace-nowrap pr-4 text-gray-800" style="width: 1%;"><%= get_score_won_text(season_user, score) %></td>
                   <td><%= get_opponents_text(season_user, score, @others) %></td>
                   <td><span class="text-gray-400 text-xs"><%= Timex.format!(score.confirmed_at, "%d-%m-%Y %H:%M", :strftime) %></span></td>
                 </tr>
@@ -164,6 +165,19 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         "<span class=\"font-semibold\">" <> score_in_text <> "</span>"
       else
         "<span class=\"font-semibold\">" <> score_in_text <> "</span>"
+      end
+
+    Phoenix.HTML.raw(score_text)
+  end
+
+  def get_score_won_text(season_user, score) do
+    side = Score.get_side(score, season_user)
+
+    score_text =
+      if score.winner == side do
+        "<span class=\"font-semibold text-xs\">W</span>"
+      else
+        "<span class=\"font-semibold text-xs\">L</span>"
       end
 
     Phoenix.HTML.raw(score_text)
