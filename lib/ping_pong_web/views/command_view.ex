@@ -86,7 +86,7 @@ defmodule PingPongWeb.CommandView do
 
     text =
       if total_won > 1 do
-        "#{won[slack_id]}x gewonnen"
+        "#{total_won}x gewonnen"
       else
         "gewonnen"
       end
@@ -94,7 +94,7 @@ defmodule PingPongWeb.CommandView do
     text =
       cond do
         total_lost > 1 ->
-          text <> ", #{won[slack_id]}x gewonnen"
+          text <> ", #{total_lost}x gewonnen"
 
         total_lost == 1 ->
           text <> " en verloren"
