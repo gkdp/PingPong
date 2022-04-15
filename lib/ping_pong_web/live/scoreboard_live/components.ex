@@ -24,7 +24,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <% end %>
         </div>
         <div class="text-center relative rounded overflow-hidden">
-          <p class="relative font-semibold dark:text-white text-md z-10 text-shadow pointer-events-none"><%= season_user.elo %></p>
+          <p class="relative font-semibold dark:text-white text-md z-10 dark:text-shadow pointer-events-none"><%= season_user.elo %></p>
 
           <div class="sparkline-container absolute">
             <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(season_user, @lowest_elo)}]"} />
@@ -81,7 +81,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <div class="space-x-2">
             <%= for season_user <- season_users do %>
               <%= live_redirect User.get_slack_name(season_user.user), to: PingPongWeb.Router.Helpers.player_player_path(@socket, :show, season_user.user_id),
-                class: "hover:underline" %>
+                class: "dark:text-white hover:underline" %>
             <% end %>
           </div>
 

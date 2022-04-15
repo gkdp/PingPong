@@ -32,9 +32,9 @@ body > div,
   justify-content: center;
 }
 
-.text-shadow {
+/* .text-shadow {
   text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
-}
+} */
 
 .form-checkbox {
   border-color: #d1d5db;

@@ -79,12 +79,12 @@
           <.form let={f} for={@changeset} as="filters" phx-change="validate">
             <label class="flex items-center">
               <%= checkbox f, :hide_players, class: "form-checkbox" %>
-              <span class="ml-2 --text-sm text-gray-600">Verberg spelers zonder scores</span>
+              <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg spelers zonder scores</span>
             </label>
 
             <label class="flex items-center mt-4">
               <%= checkbox f, :hide_teams, class: "form-checkbox" %>
-              <span class="ml-2 --text-sm text-gray-600">Verberg teams</span>
+              <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg teams</span>
             </label>
 
             <label class="block mt-4">
