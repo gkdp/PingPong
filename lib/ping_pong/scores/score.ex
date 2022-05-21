@@ -7,6 +7,7 @@ defmodule PingPong.Scores.Score do
 
   schema "scores" do
     field :winner, Ecto.Enum, values: [:left, :right, :draw]
+    field :draw, :boolean, default: false
     field :left_score, :integer
     field :right_score, :integer
     field :confirmed_at, :naive_datetime
@@ -40,7 +41,7 @@ defmodule PingPong.Scores.Score do
     |> get_score_users(if(winner == :left, do: :right, else: :left))
   end
 
-  @fields ~w(winner left_score right_score)a
+  @fields ~w(winner draw left_score right_score)a
   @doc false
   def changeset(score, attrs) do
     score

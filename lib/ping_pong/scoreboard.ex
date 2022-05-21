@@ -118,7 +118,7 @@ defmodule PingPong.Scoreboard do
   end
 
   def process_scores(%DoublesReport{left_id: left_id, left_buddy_id: left_buddy_id, right_id: right_id, right_buddy_id: right_buddy_id})
-      when left_id == right_id or left_id == left_buddy_id or right_id == right_buddy_id do
+      when left_id == right_id or left_id == left_buddy_id or left_id == right_buddy_id or right_id == right_buddy_id or left_buddy_id == right_id or left_buddy_id == right_buddy_id do
     {:error, :equals}
   end
 
@@ -132,10 +132,25 @@ defmodule PingPong.Scoreboard do
       left = set_or_create_season_user_for_user(left, season_id)
       right = set_or_create_season_user_for_user(right, season_id)
 
+      # list =
+      #   report.scores
+      #   |> Enum.map(fn score ->
+      #     cond do
+      #       score.left > score.right -> :left
+      #       score.left < score.right -> :right
+      #       true -> :draw
+      #     end
+      #   end)
+
+      # left_won = Enum.count(list, &(&1 == :left))
+      # right_won = Enum.count(list, &(&1 == :right))
+      # draw = left_won == right_won
+      draw = false
+
       scores =
         report.scores
         |> Enum.map(fn score ->
-          with {:ok, final} <- process_score(left, right, score) do
+          with {:ok, final} <- process_score(left, right, score, draw) do
             final
           else
             _ -> nil
@@ -225,7 +240,7 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  defp process_score(left, right, %Report.Score{} = score) do
+  defp process_score(left, right, %Report.Score{} = score, draw \\ false) do
     winner =
       cond do
         score.left > score.right -> :left
@@ -237,6 +252,7 @@ defmodule PingPong.Scoreboard do
       Repo.insert(
         Score.changeset(%Score{}, %{
           winner: winner,
+          draw: draw,
           left_score: score.left,
           right_score: score.right
         })
@@ -348,7 +364,7 @@ defmodule PingPong.Scoreboard do
         losing_elo_sum,
         :win,
         round: true,
-        k_factor: 10
+        k_factor: 45
       )
 
     rest_winning_elo = winning_elo - winning_elo_sum
@@ -429,12 +445,14 @@ defmodule PingPong.Scoreboard do
     end
   end
 
-  defp get_k_factor(wins, elo) do
-    cond do
-      wins <= 10 -> 60
-      elo >= 2000 -> 10
-      elo <= 950 -> 35
-      true -> 25
-    end
+  defp get_k_factor(_wins, _elo) do
+    # cond do
+    #   wins <= 10 -> 60
+    #   elo >= 2000 -> 10
+    #   elo <= 950 -> 35
+    #   true -> 25
+    # end
+
+    45
   end
 end

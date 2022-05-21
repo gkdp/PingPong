@@ -54,22 +54,6 @@ defmodule PingPongWeb.Router do
     end
   end
 
-  ## Authentication routes
-
-  scope "/", PingPongWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
-
-    # get "/users/log_in", UserSessionController, :new
-    # post "/users/log_in", UserSessionController, :create
-  end
-
-  # scope "/auth", PingPongWeb do
-  #   pipe_through [:browser]
-
-  #   get "/:provider", SlackController, :request
-  #   get "/:provider/callback", SlackController, :callback
-  # end
-
   scope "/", PingPongWeb do
     pipe_through [:browser]
 
@@ -77,6 +61,7 @@ defmodule PingPongWeb.Router do
     live "/scoreboard/season/:id", ScoreboardLive.Season, :show
 
     live "/player/:id", PlayerLive.Player, :show
+    # live "/league", LeagueLive.League, :index
   end
 
   scope "/slack", PingPongWeb do
