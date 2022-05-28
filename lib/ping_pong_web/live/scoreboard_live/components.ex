@@ -27,7 +27,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <p class="relative font-semibold dark:text-white text-md z-10 dark:text-shadow pointer-events-none"><%= season_user.elo %></p>
 
           <div class="sparkline-container absolute">
-            <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(season_user, @lowest_elo)}]"} />
+            <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(season_user)}]"} />
           </div>
         </div>
         <span class="tooltip" hidden="true"></span>
@@ -66,6 +66,43 @@ defmodule PingPongWeb.ScoreboardLive.Components do
             </table>
           </div>
         <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def main_user_row(%{user: %User{} = user} = assigns) do
+    ~H"""
+    <div>
+      <div class="grid grid-cols-8 rounded items-center">
+        <%= if Map.has_key?(assigns, :position) do %>
+          <div class="text-center">
+            <span class={"#{get_position_styling(@position)} font-bold"}><%= @position %></span>
+          </div>
+        <% end %>
+
+        <div class="col-span-4 px-3">
+          <%= live_redirect User.get_slack_name(user),
+            to: PingPongWeb.Router.Helpers.player_player_path(@socket, :show, user.id),
+            class: "text-md hover:underline dark:text-white" %>
+          <%= if Ecto.assoc_loaded?(user.teams) and not Enum.empty?(user.teams) and not Map.get(assigns, :hide_teams, false) do %>
+            <p class="text-xs text-gray-500 dark:text-gray-500"><%= Enum.join(Enum.map(user.teams, & "Team #{&1.name}"), ", ") %></p>
+          <% end %>
+        </div>
+        <div class="text-center relative rounded overflow-hidden">
+          <p class="relative font-semibold dark:text-white text-md z-10 dark:text-shadow pointer-events-none"><%= user.elo %></p>
+
+          <div class="sparkline-container absolute">
+            <%# <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(user)}]"} /> %>
+          </div>
+        </div>
+        <span class="tooltip" hidden="true"></span>
+        <div class="text-center">
+          <p class="text-md font-semibold dark:text-white"><%= user.count_won %></p>
+        </div>
+        <div class="text-center">
+          <p class="text-md font-semibold dark:text-white"><%= user.count_lost %></p>
+        </div>
       </div>
     </div>
     """
@@ -209,7 +246,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     end
   end
 
-  defp get_values(season_user, _lowest_elo) do
+  defp get_values(season_user) do
     lowest_elo =
       season_user.elo_history
       |> Enum.map(& &1.elo)

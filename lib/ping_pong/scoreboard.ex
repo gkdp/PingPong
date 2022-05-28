@@ -68,7 +68,13 @@ defmodule PingPong.Scoreboard do
         order_by: :inserted_at
 
     user
-    |> Repo.preload(season_users: [elo_history: elo_history, scores: {from(c in Score, where: not is_nil(c.confirmed_at)), [season_users: [:user]]}, season: []])
+    |> Repo.preload(
+      season_users: [
+        elo_history: elo_history,
+        scores: {from(c in Score, where: not is_nil(c.confirmed_at)), [season_users: [:user]]},
+        season: []
+      ]
+    )
   end
 
   def get_user_by_slack(id) when is_binary(id) do
@@ -117,8 +123,15 @@ defmodule PingPong.Scoreboard do
     {:error, :equals}
   end
 
-  def process_scores(%DoublesReport{left_id: left_id, left_buddy_id: left_buddy_id, right_id: right_id, right_buddy_id: right_buddy_id})
-      when left_id == right_id or left_id == left_buddy_id or left_id == right_buddy_id or right_id == right_buddy_id or left_buddy_id == right_id or left_buddy_id == right_buddy_id do
+  def process_scores(%DoublesReport{
+        left_id: left_id,
+        left_buddy_id: left_buddy_id,
+        right_id: right_id,
+        right_buddy_id: right_buddy_id
+      })
+      when left_id == right_id or left_id == left_buddy_id or left_id == right_buddy_id or
+             right_id == right_buddy_id or left_buddy_id == right_id or
+             left_buddy_id == right_buddy_id do
     {:error, :equals}
   end
 
@@ -288,7 +301,7 @@ defmodule PingPong.Scoreboard do
     )
   end
 
-  def confirm_score(score, [%ScoreUser{} = winner], [%ScoreUser{} = loser]) do
+  def confirm_score(%Score{} = score, [%ScoreUser{} = winner], [%ScoreUser{} = loser]) do
     wins =
       Repo.aggregate(
         from(s in Score,
@@ -310,6 +323,19 @@ defmodule PingPong.Scoreboard do
         k_factor: get_k_factor(wins, winner.season_user.elo)
       )
 
+    winning_user = Enum.find(score.users, &(&1.id == winner.season_user.user_id))
+
+    losing_user = Enum.find(score.users, &(&1.id == loser.season_user.user_id))
+
+    {winning_elo_user, losing_elo_user} =
+      Elo.rate(
+        winning_user.elo,
+        losing_user.elo,
+        :win,
+        round: true,
+        k_factor: get_k_factor(wins, winner.season_user.user.elo)
+      )
+
     Repo.transaction(fn ->
       Repo.update!(
         SeasonUser.changeset(winner.season_user, %{
@@ -323,9 +349,22 @@ defmodule PingPong.Scoreboard do
         })
       )
 
+      Repo.update!(
+        User.changeset(winning_user, %{
+          elo: winning_elo_user
+        })
+      )
+
+      Repo.update!(
+        User.changeset(losing_user, %{
+          elo: losing_elo_user
+        })
+      )
+
       Repo.insert!(
         EloHistory.changeset(%EloHistory{}, %{
           elo: winning_elo,
+          elo_user: winning_elo_user,
           season_user_id: winner.season_user_id,
           score_id: score.id
         })
@@ -334,6 +373,7 @@ defmodule PingPong.Scoreboard do
       Repo.insert!(
         EloHistory.changeset(%EloHistory{}, %{
           elo: losing_elo,
+          elo_user: losing_elo_user,
           season_user_id: loser.season_user_id,
           score_id: score.id
         })
@@ -380,9 +420,17 @@ defmodule PingPong.Scoreboard do
           })
         )
 
+        previous =
+          Repo.one(
+            from e in EloHistory,
+              where: e.season_user_id == ^winner.season_user_id,
+              order_by: [desc: e.id]
+          )
+
         Repo.insert!(
           EloHistory.changeset(%EloHistory{}, %{
             elo: elo,
+            elo_user: if(!is_nil(previous), do: previous.elo_user, else: 1000),
             season_user_id: winner.season_user_id,
             score_id: score.id
           })
@@ -398,9 +446,17 @@ defmodule PingPong.Scoreboard do
           })
         )
 
+        previous =
+          Repo.one(
+            from e in EloHistory,
+              where: e.season_user_id == ^loser.season_user_id,
+              order_by: [desc: e.id]
+          )
+
         Repo.insert!(
           EloHistory.changeset(%EloHistory{}, %{
             elo: elo,
+            elo_user: if(!is_nil(previous), do: previous.elo_user, else: 1000),
             season_user_id: loser.season_user_id,
             score_id: score.id
           })
@@ -434,7 +490,7 @@ defmodule PingPong.Scoreboard do
     for score <- scores do
       right =
         Score.get_score_users(score, :right)
-        |> Enum.map(&(&1.season_user.user))
+        |> Enum.map(& &1.season_user.user)
         |> List.first()
 
       Logger.info("Auto confirm score", score_id: score.id)

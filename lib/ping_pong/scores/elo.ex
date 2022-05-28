@@ -7,6 +7,7 @@ defmodule PingPong.Scores.Elo do
 
   schema "elo_history" do
     field :elo, :integer, default: 1000
+    field :elo_user, :integer, default: 1000
 
     belongs_to :season_user, SeasonUser
     belongs_to :score, Score
@@ -14,7 +15,7 @@ defmodule PingPong.Scores.Elo do
     timestamps()
   end
 
-  @fields ~w(elo season_user_id score_id)a
+  @fields ~w(elo elo_user season_user_id score_id)a
   @doc false
   def changeset(score, attrs) do
     score

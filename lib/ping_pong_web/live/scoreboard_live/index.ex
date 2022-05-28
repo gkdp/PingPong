@@ -1,8 +1,7 @@
-defmodule PingPongWeb.ScoreboardLive.Season do
+defmodule PingPongWeb.ScoreboardLive.Index do
   use PingPongWeb, :live_view
 
-  alias PingPong.Seasons
-  alias PingPong.Seasons.Season
+  alias PingPong.Users
 
   @impl true
   def mount(_params, _session, socket) do
@@ -11,13 +10,8 @@ defmodule PingPongWeb.ScoreboardLive.Season do
 
   @impl true
   def handle_params(params, _, socket) do
-    season =
-      if(Map.has_key?(params, "id"),
-        do: Seasons.get_season!(params["id"]),
-        else: Seasons.get_active_season!()
-      )
-      |> Seasons.load_users()
-      |> Seasons.load_user_scores()
+    users =
+      Users.get_users()
 
     changeset =
       changeset(%{
@@ -31,12 +25,10 @@ defmodule PingPongWeb.ScoreboardLive.Season do
 
     {:noreply,
      socket
-     |> assign(:page_title, season.title)
-     |> assign(:season, season)
-     |> assign(:teams, list_teams(season))
-     |> assign(:lowest_elo, lowest_elo(season))
-     |> assign(:percentage, calculate_bar(season.start_at, season.end_at))
-     |> assign_changeset(season, changeset)}
+     |> assign(:page_title, "Tafeltennis")
+     |> assign(:teams, list_teams(users))
+    #  |> assign(:lowest_elo, lowest_elo(season))
+     |> assign_changeset(users, changeset)}
   end
 
   @impl true
@@ -70,21 +62,15 @@ defmodule PingPongWeb.ScoreboardLive.Season do
     "<span class=\"font-semibold\">Team " <> name <> "</span>"
   end
 
-  defp list_teams(%Season{} = season) do
-    season.users
+  defp list_teams(users) do
+    users
     |> Enum.flat_map(& &1.teams)
     |> Enum.uniq_by(& &1.id)
   end
 
-  defp lowest_elo(%Season{} = season) do
-    season.season_users
-    |> Enum.map(& &1.elo)
-    |> Enum.min(fn -> 1000 end)
-  end
-
-  defp assign_changeset(socket, season, changeset) do
+  defp assign_changeset(socket, users, changeset) do
     users =
-      season.season_users
+      users
       |> then(fn users ->
         users
         |> Enum.filter(&(&1.count_won > 0 || &1.count_lost > 0))
@@ -112,17 +98,5 @@ defmodule PingPongWeb.ScoreboardLive.Season do
   defp changeset(params) do
     {%{}, @types}
     |> Ecto.Changeset.cast(params, Map.keys(@types))
-  end
-
-  defp calculate_bar(start_time, end_time) do
-    with %{} <- end_time,
-         days when days > 0 <- Timex.diff(end_time, NaiveDateTime.utc_now(), :days) do
-      all_days = Timex.diff(end_time, start_time, :days)
-
-      (all_days - days) / all_days * 100
-    else
-      nil -> 0
-      _ -> 100
-    end
   end
 end

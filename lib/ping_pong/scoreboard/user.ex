@@ -8,17 +8,21 @@ defmodule PingPong.Scoreboard.User do
   schema "users" do
     field :slack_id, :string
     field :name, :string
+    field :elo, :integer, default: 1000
 
     has_one :season_user, SeasonUser
     has_many :season_users, SeasonUser
     many_to_many :teams, Team, join_through: "team_user"
+
+    field :count_won, :integer, virtual: true
+    field :count_lost, :integer, virtual: true
 
     timestamps()
   end
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:slack_id, :name, :email, :elo])
+    |> cast(attrs, [:slack_id, :name, :elo])
   end
 
   def get_slack_name(%__MODULE__{slack_id: id}) do
