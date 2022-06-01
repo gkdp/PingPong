@@ -13,6 +13,7 @@ defmodule PingPong.Scoreboard.User do
     has_one :season_user, SeasonUser
     has_many :season_users, SeasonUser
     many_to_many :teams, Team, join_through: "team_user"
+    has_many :elo_history, through: [:season_users, :elo_history]
 
     field :count_won, :integer, virtual: true
     field :count_lost, :integer, virtual: true

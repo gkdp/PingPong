@@ -93,7 +93,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <p class="relative font-semibold dark:text-white text-md z-10 dark:text-shadow pointer-events-none"><%= user.elo %></p>
 
           <div class="sparkline-container absolute">
-            <%# <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(user)}]"} /> %>
+            <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(user)}]"} />
           </div>
         </div>
         <span class="tooltip" hidden="true"></span>

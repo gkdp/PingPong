@@ -4,6 +4,7 @@ defmodule PingPong.Scores.Score do
 
   alias PingPong.Seasons.SeasonUser
   alias PingPong.Scores.ScoreUser
+  alias PingPong.Scores.Elo
 
   schema "scores" do
     field :winner, Ecto.Enum, values: [:left, :right, :draw]
@@ -14,6 +15,7 @@ defmodule PingPong.Scores.Score do
     field :denied_at, :naive_datetime
 
     has_many :score_users, ScoreUser
+    has_many :elo_history, Elo
     has_many :season_users, through: [:score_users, :season_user]
     has_many :users, through: [:score_users, :season_user, :user]
 

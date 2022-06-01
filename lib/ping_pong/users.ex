@@ -10,6 +10,7 @@ defmodule PingPong.Users do
 
   alias PingPong.Scoreboard.User
   alias PingPong.Scores.ScoreUser
+  alias PingPong.Scores.Elo
 
   def get_user(id) do
     Repo.get!(User, id)
@@ -21,7 +22,7 @@ defmodule PingPong.Users do
         from s in User,
           order_by: [desc: s.elo]
       )
-      |> Repo.preload(:teams)
+      |> Repo.preload([:teams, elo_history: from(c in Elo, order_by: c.inserted_at)])
 
     score_users =
       Repo.all(

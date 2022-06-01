@@ -27,7 +27,7 @@ defmodule PingPongWeb.ScoreboardLive.Index do
      socket
      |> assign(:page_title, "Tafeltennis")
      |> assign(:teams, list_teams(users))
-    #  |> assign(:lowest_elo, lowest_elo(season))
+     |> assign(:initial_users, users)
      |> assign_changeset(users, changeset)}
   end
 
@@ -37,7 +37,7 @@ defmodule PingPongWeb.ScoreboardLive.Index do
 
     {:noreply,
      socket
-     |> assign_changeset(socket.assigns.season, changeset)}
+     |> assign_changeset(socket.assigns.initial_users, changeset)}
   end
 
   def format_team_names(teams) do
@@ -79,7 +79,7 @@ defmodule PingPongWeb.ScoreboardLive.Index do
         with team when is_integer(team) <- Ecto.Changeset.get_field(changeset, :team) do
           users
           |> Enum.filter(fn user ->
-            found = Enum.find(user.user.teams, &(&1.id == team))
+            found = Enum.find(user.teams, &(&1.id == team))
 
             found != nil
           end)
