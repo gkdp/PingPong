@@ -261,7 +261,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
       
     history =
       history
-      |> Enum.sort(&(&1.inserted_at), DateTime)
+      |> Enum.sort(&(DateTime.compare(&1.inserted_at, &2.inserted_at)))
 
     values =
       for %{elo: elo, inserted_at: date} <- history do
