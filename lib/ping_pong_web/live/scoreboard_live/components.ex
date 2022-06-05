@@ -259,9 +259,9 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         season_user.elo_history
       end
       
-    history =
-      history
-      |> Enum.sort(&(DateTime.compare(&1.inserted_at, &2.inserted_at) == :lt))
+    # history =
+    #  history
+    #  |> Enum.sort(&(DateTime.compare(&1.inserted_at, &2.inserted_at) == :lt))
 
     values =
       for %{elo: elo, inserted_at: date} <- history do
