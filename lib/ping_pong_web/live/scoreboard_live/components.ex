@@ -93,7 +93,7 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           <p class="relative font-semibold dark:text-white text-md z-10 dark:text-shadow pointer-events-none"><%= user.elo %></p>
 
           <div class="sparkline-container absolute">
-            <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(user)}]"} />
+            <svg class="sparkline" width="100" height="24" stroke-width="1" x-data x-sparkline={"[#{get_values(user, :main)}]"} />
           </div>
         </div>
         <span class="tooltip" hidden="true"></span>
@@ -246,26 +246,37 @@ defmodule PingPongWeb.ScoreboardLive.Components do
     end
   end
 
-  defp get_values(season_user) do
+  defp get_values(season_user, type \\ :season) do
     lowest_elo =
       season_user.elo_history
-      |> Enum.map(& &1.elo)
+      |> Enum.map(fn elo ->
+        case type do
+          :season -> elo.elo
+          :main -> elo.elo_user
+        end
+      end)
       |> Enum.min(fn -> 1000 end)
 
     history =
       if length(season_user.elo_history) < 10 do
-        [%{elo: 1000, inserted_at: season_user.inserted_at}] ++ season_user.elo_history
+        [%{elo: 1000, elo_user: 1000, inserted_at: season_user.inserted_at}] ++ season_user.elo_history
       else
         season_user.elo_history
       end
-      
-    # history =
-    #  history
-    #  |> Enum.sort(&(DateTime.compare(&1.inserted_at, &2.inserted_at) == :lt))
+
+    history =
+      history
+      |> Enum.sort_by(& &1.inserted_at, NaiveDateTime)
 
     values =
-      for %{elo: elo, inserted_at: date} <- history do
-        "{date: \"#{date}\", original: #{elo}, value: #{elo - lowest_elo}}"
+      for %{elo: elo, elo_user: elo_user, inserted_at: date} <- history do
+        main_elo =
+          case type do
+            :season -> elo
+            :main -> elo_user
+          end
+
+        "{date: \"#{date}\", original: #{main_elo}, value: #{main_elo - lowest_elo}}"
       end
 
     Enum.join(values, ",")
