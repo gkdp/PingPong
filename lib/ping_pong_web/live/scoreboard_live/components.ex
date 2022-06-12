@@ -51,8 +51,25 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         <% last_scores = SeasonUser.get_scores(season_user, 5) %>
 
         <%= if length(last_scores) > 1 do %>
+          <div class="bg-gray-100 p-6 pt-0 text-sm">
+            <table class="table w-full">
+              <tr>
+                <td class="whitespace-nowrap pr-4 font-bold" style="width: 1%;">Win ratio</td>
+                <td class="whitespace-nowrap pr-4 text-gray-800"><%= Float.ceil(season_user.count_won / season_user.count_lost, 1) %></td>
+              </tr>
+              <tr>
+                <td class="whitespace-nowrap pr-4" style="width: 1%;">Gewonnen</td>
+                <td class="whitespace-nowrap pr-4 text-gray-800"><%= season_user.count_won %></td>
+              </tr>
+              <tr>
+                <td class="whitespace-nowrap pr-4" style="width: 1%;">Verloren</td>
+                <td class="whitespace-nowrap pr-4 text-gray-800"><%= season_user.count_lost %></td>
+              </tr>
+            </table>
+          </div>
+
           <div class="bg-gray-100 px-6 pb-6 text-sm">
-            <p><%= length(last_scores) %> laatst gespeelde matches:</p>
+            <p class="font-bold"><%= length(last_scores) %> laatst gespeelde matches:</p>
 
             <table class="table mt-2 w-full">
               <%= for score <- SeasonUser.get_scores(season_user, 5) do %>

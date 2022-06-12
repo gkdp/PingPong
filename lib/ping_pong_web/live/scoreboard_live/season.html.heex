@@ -102,7 +102,7 @@
         <div class="hidden md:flex md:1/3 lg:w-1/4 border-l px-6 py-6">
           <.form let={f} for={@changeset} as="filters" phx-change="validate" class="w-full">
             <label class="block">
-              <span class="text-gray-700 font-semibold">Filter op team</span>
+              <span class="text-gray-700 dark:text-white font-semibold">Filter op team</span>
               <%= select f, :team, [{"Alle", nil}] ++ Enum.map(@teams, &({&1.name, &1.id})), class: "form-select mt-1 block w-full" %>
             </label>
 
