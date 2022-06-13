@@ -53,10 +53,12 @@ defmodule PingPongWeb.ScoreboardLive.Components do
         <%= if length(last_scores) > 1 do %>
           <div class="bg-gray-100 p-6 pt-0 text-sm">
             <table class="table w-full">
-              <tr>
-                <td class="whitespace-nowrap pr-4 font-bold" style="width: 1%;">Win ratio</td>
-                <td class="whitespace-nowrap pr-4 text-gray-800"><%= Float.ceil(season_user.count_won / season_user.count_lost, 1) %></td>
-              </tr>
+              <%= if season_user.count_won >= 0 && season_user.count_lost > 0 do %>
+                <tr>
+                  <td class="whitespace-nowrap pr-4 font-bold" style="width: 1%;">Win ratio</td>
+                  <td class="whitespace-nowrap pr-4 text-gray-800"><%= Float.ceil(season_user.count_won / season_user.count_lost, 1) %></td>
+                </tr>
+              <% end %>
               <tr>
                 <td class="whitespace-nowrap pr-4" style="width: 1%;">Gewonnen</td>
                 <td class="whitespace-nowrap pr-4 text-gray-800"><%= season_user.count_won %></td>
