@@ -77,19 +77,6 @@ end
 config :slack,
   api_token: System.get_env("SLACK_API_TOKEN")
 
-# Configure Ueberauth
-config :ueberauth, Ueberauth,
-  providers: [
-    oidc:
-      {Ueberauth.Strategy.OIDC,
-       [
-         default: [
-           # required, set to default provider you want to use
-           provider: :slack,
-         ]
-       ]}
-  ]
-
 config :ueberauth, Ueberauth.Strategy.OIDC,
   # one or more providers
   slack: [

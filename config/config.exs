@@ -29,10 +29,24 @@ config :ping_pong, PingPong.Mailer, adapter: Swoosh.Adapters.Local
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
 
-
 config :ping_pong, PingPong.AuthAccessPipeline,
   module: PingPong.Guardian,
   error_handler: PingPong.AuthErrorHandler
+
+config :ueberauth, Ueberauth,
+  providers: [
+    oidc:
+      {Ueberauth.Strategy.OIDC,
+       [
+         default: [
+           # required, set to default provider you want to use
+           provider: :slack,
+         ]
+       ]}
+  ]
+
+config :slack,
+  api_token: System.get_env("SLACK_API_TOKEN")
 
 config :ping_pong, PingPong.Scheduler,
   jobs: [
