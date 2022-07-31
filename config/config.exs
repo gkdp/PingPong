@@ -29,6 +29,15 @@ config :ping_pong, PingPong.Mailer, adapter: Swoosh.Adapters.Local
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
 
+# Configure Guardian
+config :ping_pong, PingPong.Guardian,
+  issuer: "ping_pong",
+  secret_key: System.get_env("GUARDIAN_SECRET")
+
+config :ping_pong, PingPong.AuthAccessPipeline,
+  module: PingPong.Guardian,
+  error_handler: PingPong.AuthErrorHandler
+
 # Configure Ueberauth
 config :ueberauth, Ueberauth,
   providers: [

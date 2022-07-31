@@ -10,6 +10,10 @@ defmodule PingPongWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :auth do
+    plug PingPong.AuthAccessPipeline
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -67,9 +71,16 @@ defmodule PingPongWeb.Router do
 
   scope "/auth", PingPongWeb do
     pipe_through :browser
+    get "/logout", AuthController, :logout
     get "/:provider", AuthController, :request
     get "/:provider/callback", AuthController, :callback
     post "/:provider/callback", AuthController, :callback
+  end
+
+  scope "/my", PingPongWeb do
+    pipe_through [:browser, :auth]
+
+    live "/profile", PlayerLive.Profile, :show
   end
 
   scope "/slack", PingPongWeb do

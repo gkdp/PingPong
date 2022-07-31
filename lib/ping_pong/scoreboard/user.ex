@@ -16,6 +16,11 @@ defmodule PingPong.Scoreboard.User do
     many_to_many :teams, Team, join_through: "team_user"
     has_many :elo_history, through: [:season_users, :elo_history]
 
+    embeds_one :settings, Settings do
+      field :show_pictures, :boolean, default: false
+      field :hide_teams, :boolean, default: false
+    end
+
     field :count_won, :integer, virtual: true
     field :count_lost, :integer, virtual: true
 
@@ -25,6 +30,12 @@ defmodule PingPong.Scoreboard.User do
   def changeset(user, attrs) do
     user
     |> cast(attrs, [:slack_id, :name, :elo, :custom_racket])
+    |> cast_embed(:settings, with: &settings_changeset/2)
+  end
+
+  defp settings_changeset(schema, params) do
+    schema
+    |> cast(params, [:show_pictures, :hide_teams])
   end
 
   defp get_slack(%__MODULE__{slack_id: id}) do

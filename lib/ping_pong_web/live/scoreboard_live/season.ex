@@ -6,9 +6,16 @@ defmodule PingPongWeb.ScoreboardLive.Season do
 
   @impl true
   def mount(_params, session, socket) do
+    {user, claims} =
+      with {:ok, user, claims} <- PingPong.Guardian.resource_from_token(session["guardian_default_token"]) do
+        {user, claims}
+      else
+        _ -> {nil, nil}
+      end
+
     {:ok,
      socket
-     |> assign(user: Map.get(session, "current_user"))}
+     |> assign(user: user, claims: claims)}
   end
 
   @impl true
@@ -23,8 +30,8 @@ defmodule PingPongWeb.ScoreboardLive.Season do
 
     changeset =
       changeset(%{
-        hide_teams: false,
-        show_pictures: false,
+        hide_teams: socket.assigns.user.settings.hide_teams,
+        show_pictures: socket.assigns.user.settings.show_pictures,
         team:
           case Map.get(params, "team") do
             nil -> nil
