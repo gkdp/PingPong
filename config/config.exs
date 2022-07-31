@@ -29,54 +29,10 @@ config :ping_pong, PingPong.Mailer, adapter: Swoosh.Adapters.Local
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
 
-# Configure Guardian
-config :ping_pong, PingPong.Guardian,
-  issuer: "ping_pong",
-  secret_key: System.get_env("GUARDIAN_SECRET")
 
 config :ping_pong, PingPong.AuthAccessPipeline,
   module: PingPong.Guardian,
   error_handler: PingPong.AuthErrorHandler
-
-# Configure Ueberauth
-config :ueberauth, Ueberauth,
-  providers: [
-    slack: {Ueberauth.Strategy.SlackV2, []},
-    oidc:
-      {Ueberauth.Strategy.OIDC,
-       [
-         default: [
-           # required, set to default provider you want to use
-           provider: :slack,
-         ]
-       ]}
-  ]
-
-config :ueberauth, Ueberauth.Strategy.SlackV2.OAuth,
-  client_id: System.get_env("SLACK_CLIENT_ID"),
-  client_secret: System.get_env("SLACK_CLIENT_SECRET")
-
-config :ueberauth, Ueberauth.Strategy.OIDC,
-  # one or more providers
-  slack: [
-    fetch_userinfo: true, # true/false
-    uid_field: "sub", # only include if getting the user_id from the claims
-    discovery_document_uri: "https://slack.com/.well-known/openid-configuration",
-    client_id: System.get_env("SLACK_CLIENT_ID"),
-    client_secret: System.get_env("SLACK_CLIENT_SECRET"),
-    redirect_uri: System.get_env("SLACK_REDIRECT_URI"),
-    response_type: "code",
-    scope: "openid profile email"
-  ]
-
-config :slack,
-  api_token: System.get_env("SLACK_API_TOKEN")
-# web_http_client_opts: [
-#   proxy: {"172.23.32.43", 9090},
-#   ssl: [
-#     certfile: "proxyman-key.pem"
-#   ]
-# ]
 
 config :ping_pong, PingPong.Scheduler,
   jobs: [
