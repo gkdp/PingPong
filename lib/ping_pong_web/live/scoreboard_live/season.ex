@@ -28,10 +28,12 @@ defmodule PingPongWeb.ScoreboardLive.Season do
       |> Seasons.load_users()
       |> Seasons.load_user_scores()
 
+    user = socket.assigns.user
+
     changeset =
       changeset(%{
-        hide_teams: socket.assigns.user.settings.hide_teams,
-        show_pictures: socket.assigns.user.settings.show_pictures,
+        hide_teams: if(is_nil(user), do: false, else: user.settings.hide_teams),
+        show_pictures: if(is_nil(user), do: false, else: user.settings.show_pictures),
         team:
           case Map.get(params, "team") do
             nil -> nil
