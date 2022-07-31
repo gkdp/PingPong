@@ -86,7 +86,7 @@ defmodule PingPongWeb.PlayerLive.Player do
       end
 
     lowest_elo =
-      season_user.elo_history
+      history
       |> Enum.map(& &1.elo)
       |> Enum.min()
 
