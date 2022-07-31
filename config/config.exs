@@ -64,7 +64,7 @@ config :ueberauth, Ueberauth.Strategy.OIDC,
     discovery_document_uri: "https://slack.com/.well-known/openid-configuration",
     client_id: System.get_env("SLACK_CLIENT_ID"),
     client_secret: System.get_env("SLACK_CLIENT_SECRET"),
-    redirect_uri: "https://ping-pong.cryptis.ch/auth/oidc/callback",
+    redirect_uri: System.get_env("SLACK_REDIRECT_URI"),
     response_type: "code",
     scope: "openid profile email"
   ]
