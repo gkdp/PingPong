@@ -43,12 +43,26 @@
             <span class="text-white font-medium text-lg">PP</span>
           </div>
 
-          <div class="flex space-x-4 p-4">
+          <div class="flex p-4 w-full">
             <%= live_redirect "Algemeen", to: PingPongWeb.Router.Helpers.scoreboard_index_path(@socket, :index),
               class: "bg-white hover:shadow transition-shadow ease-in duration-100 py-2 px-4 rounded" %>
 
             <%= live_redirect "Seizoen", to: PingPongWeb.Router.Helpers.scoreboard_season_path(@socket, :index),
-              class: "bg-white hover:shadow transition-shadow ease-in duration-100 py-2 px-4 rounded" %>
+              class: "bg-white hover:shadow transition-shadow ease-in duration-100 py-2 px-4 rounded ml-4" %>
+
+            <%= if assigns[:user] do %>
+              <div class="ml-auto">
+                <img src={@user["https://slack.com/user_image_48"]} class="rounded w-10" />
+              </div>
+            <% else %>
+              <%= live_redirect to: PingPongWeb.Router.Helpers.auth_path(@socket, :request, "oidc"),
+                class: "inline-flex items-center bg-white hover:shadow transition-shadow ease-in duration-100 py-2 px-4 rounded ml-auto" do %>
+                <svg xmlns="http://www.w3.org/2000/svg" style="height:16px;width:16px;margin-right:12px" viewBox="0 0 122.8 122.8">
+                  <path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zm6.5 0c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="#e01e5a"></path><path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zm0 6.5c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="#36c5f0"></path><path d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2zm-6.5 0c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z" fill="#2eb67d"></path><path d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9zm0-6.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z" fill="#ecb22e"></path>
+                </svg>
+                <span>Login</span>
+              <% end %>
+            <% end %>
           </div>
         </div>
       </div>
@@ -95,7 +109,15 @@
           </div>
 
           <%= for {user, position} <- Enum.with_index(@users, 1) do %>
-            <PingPongWeb.ScoreboardLive.Components.user_row socket={@socket} user={user} position={position} lowest_elo={@lowest_elo} hide_teams={@hide_teams} others={@season.season_users} />
+            <PingPongWeb.ScoreboardLive.Components.user_row
+              socket={@socket}
+              user={user}
+              position={position}
+              lowest_elo={@lowest_elo}
+              hide_teams={@hide_teams}
+              show_pictures={@show_pictures}
+              others={@season.season_users}
+            />
           <% end %>
         </div>
 
@@ -109,6 +131,11 @@
             <label class="flex items-center mt-4 border-t pt-4">
               <%= checkbox f, :hide_teams, class: "form-checkbox" %>
               <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg teams</span>
+            </label>
+
+            <label class="flex items-center pt-4">
+              <%= checkbox f, :show_pictures, class: "form-checkbox" %>
+              <span class="ml-2 --text-sm text-gray-600 dark:text-white">Toon foto's</span>
             </label>
           </.form>
         </div>

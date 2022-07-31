@@ -51,8 +51,9 @@ defmodule PingPong.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
 
-      {:ueberauth, "~> 0.7"},
+      {:ueberauth, "~> 0.10"},
       {:ueberauth_slack_v2, "~> 2.0"},
+      {:ueberauth_oidc, git: "https://github.com/DefactoSoftware/ueberauth_oidc.git"},
       {:slack, "~> 0.23.5"},
       {:cachex, "~> 3.4"},
       {:elo, "~> 0.1.0"},

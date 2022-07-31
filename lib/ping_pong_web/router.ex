@@ -65,6 +65,13 @@ defmodule PingPongWeb.Router do
     # live "/league", LeagueLive.League, :index
   end
 
+  scope "/auth", PingPongWeb do
+    pipe_through :browser
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
+    post "/:provider/callback", AuthController, :callback
+  end
+
   scope "/slack", PingPongWeb do
     pipe_through [:api]
 

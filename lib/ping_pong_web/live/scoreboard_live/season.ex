@@ -5,8 +5,10 @@ defmodule PingPongWeb.ScoreboardLive.Season do
   alias PingPong.Seasons.Season
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, session, socket) do
+    {:ok,
+     socket
+     |> assign(user: Map.get(session, "current_user"))}
   end
 
   @impl true
@@ -22,6 +24,7 @@ defmodule PingPongWeb.ScoreboardLive.Season do
     changeset =
       changeset(%{
         hide_teams: false,
+        show_pictures: false,
         team:
           case Map.get(params, "team") do
             nil -> nil
@@ -105,10 +108,11 @@ defmodule PingPongWeb.ScoreboardLive.Season do
     socket
     |> assign(:changeset, changeset)
     |> assign(:hide_teams, Ecto.Changeset.get_field(changeset, :hide_teams))
+    |> assign(:show_pictures, Ecto.Changeset.get_field(changeset, :show_pictures))
     |> assign(:users, users)
   end
 
-  @types %{hide_teams: :boolean, team: :integer}
+  @types %{hide_teams: :boolean, show_pictures: :boolean, team: :integer}
   defp changeset(params) do
     {%{}, @types}
     |> Ecto.Changeset.cast(params, Map.keys(@types))

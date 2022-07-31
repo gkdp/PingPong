@@ -18,6 +18,7 @@ defmodule PingPong.Application do
       PingPongWeb.Endpoint,
       # Start a worker by calling: PingPong.Worker.start_link(arg)
       # {PingPong.Worker, arg}
+      {OpenIDConnect.Worker, Application.get_env(:ueberauth, Ueberauth.Strategy.OIDC)},
       {Cachex, name: :slack_profiles},
       PingPong.Scheduler
     ]

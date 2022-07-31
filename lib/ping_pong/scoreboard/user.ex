@@ -8,6 +8,7 @@ defmodule PingPong.Scoreboard.User do
   schema "users" do
     field :slack_id, :string
     field :name, :string
+    field :custom_racket, :boolean
     field :elo, :integer, default: 1000
 
     has_one :season_user, SeasonUser
@@ -23,10 +24,10 @@ defmodule PingPong.Scoreboard.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:slack_id, :name, :elo])
+    |> cast(attrs, [:slack_id, :name, :elo, :custom_racket])
   end
 
-  def get_slack_name(%__MODULE__{slack_id: id}) do
+  defp get_slack(%__MODULE__{slack_id: id}) do
     {_, user} =
       Cachex.fetch(:slack_profiles, id, fn _ ->
         with %{"ok" => true, "user" => user} <- Slack.Web.Users.info(id) do
@@ -40,9 +41,20 @@ defmodule PingPong.Scoreboard.User do
         end
       end)
 
-    case user do
+    user
+  end
+
+  def get_slack_name(%__MODULE__{slack_id: _id} = slack) do
+    case get_slack(slack) do
       %{"profile" => %{"real_name" => name}} -> name
       _ -> "Naam niet bekend"
+    end
+  end
+
+  def get_slack_avatar(%__MODULE__{slack_id: _id} = slack) do
+    case get_slack(slack) do
+      %{"profile" => %{"image_48" => image}} -> image
+      _ -> nil
     end
   end
 

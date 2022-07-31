@@ -124,6 +124,14 @@ defmodule PingPongWeb.PlayerLive.Player do
       }))
     end
 
+    custom_racket = Map.get(params, "custom_racket", "false") == "true"
+
+    changes =
+      Repo.get!(User, socket.assigns.user.id)
+      |> Ecto.Changeset.change(custom_racket: custom_racket)
+
+    Repo.update(changes)
+
     {:noreply, socket}
   end
 end

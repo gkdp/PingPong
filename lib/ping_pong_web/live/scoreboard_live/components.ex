@@ -16,11 +16,25 @@ defmodule PingPongWeb.ScoreboardLive.Components do
           </div>
         <% end %>
 
-        <div class="col-span-4 px-3">
-          <a class="text-md hover:underline dark:text-white" href="#" x-on:click.prevent={"expanded = expanded == #{season_user.id} ? null : #{season_user.id}; update()"}><%= User.get_slack_name(user) %></a>
+        <div class="col-span-4 px-3 flex">
+          <%= if Map.get(assigns, :show_pictures, false) do %>
+            <div class="self-center mr-4">
+              <img src={User.get_slack_avatar(user)} class="rounded w-6" />
+            </div>
+          <% end %>
 
-          <%= if Ecto.assoc_loaded?(user.teams) and not Enum.empty?(user.teams) and not Map.get(assigns, :hide_teams, false) do %>
-            <p class="text-xs text-gray-500 dark:text-gray-500"><%= Enum.join(Enum.map(user.teams, & "Team #{&1.name}"), ", ") %></p>
+          <div>
+            <a class="text-md hover:underline dark:text-white" href="#" x-on:click.prevent={"expanded = expanded == #{season_user.id} ? null : #{season_user.id}; update()"}><%= User.get_slack_name(user) %></a>
+
+            <%= if Ecto.assoc_loaded?(user.teams) and not Enum.empty?(user.teams) and not Map.get(assigns, :hide_teams, false) do %>
+              <p class="text-xs text-gray-500 dark:text-gray-500"><%= Enum.join(Enum.map(user.teams, & "Team #{&1.name}"), ", ") %></p>
+            <% end %>
+          </div>
+
+          <%= if user.custom_racket do %>
+            <div class="ml-auto self-center">
+              <i class="fa-solid fa-dumbbell fa-sm text-gray-300" title="Custom batje"></i>
+            </div>
           <% end %>
         </div>
         <div class="text-center relative rounded overflow-hidden">
