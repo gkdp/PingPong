@@ -16,8 +16,7 @@ defmodule PingPong.Scoreboard.User do
     many_to_many :teams, Team, join_through: "team_user"
     has_many :elo_history, through: [:season_users, :elo_history]
 
-    @primary_key false
-    embeds_one :settings, Settings do
+    embeds_one :settings, Settings, on_replace: :delete, primary_key: false do
       field :show_pictures, :boolean, default: false
       field :hide_teams, :boolean, default: false
     end
