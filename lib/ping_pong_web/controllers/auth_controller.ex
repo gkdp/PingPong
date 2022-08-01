@@ -2,6 +2,7 @@ defmodule PingPongWeb.AuthController do
   use PingPongWeb, :controller
 
   alias PingPong.Scoreboard
+  alias PingPong.Users
 
   plug Ueberauth
 
@@ -26,6 +27,15 @@ defmodule PingPongWeb.AuthController do
     conn
     |> put_flash(:info, "Successfully logged out.")
     |> PingPong.Guardian.Plug.sign_out()
+    |> redirect(to: "/")
+  end
+
+  def dev(conn, _params) do
+    user = Users.get_user(1)
+
+    conn
+    |> put_flash(:info, "Successfully authenticated.")
+    |> PingPong.Guardian.Plug.sign_in(user, %{picture: "https://avatars.slack-edge.com/2021-09-22/2518454877683_7528df9e5e0fad98e703_48.jpg"})
     |> redirect(to: "/")
   end
 end

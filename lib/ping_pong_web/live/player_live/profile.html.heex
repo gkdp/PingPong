@@ -34,7 +34,7 @@
       <div class="hidden lg:grid gap-y-4 lg:w-1/4 py-6 px-2 justify-end self-start">
       </div>
 
-      <div class="grid gap-y-4 w-full md:w-2/3 lg:w-2/4 py-6 px-2 sm:px-4 self-start">
+      <div class="w-full md:w-2/3 lg:w-2/4 py-6 px-2 sm:px-4 self-start">
         <div class="space-y-2">
           <h1 class="text-2xl font-medium font-montserrat dark:text-white">
             <%= PingPong.Scoreboard.User.get_slack_name(@user) %>
@@ -45,26 +45,33 @@
           <% end %>
         </div>
 
-        <div class="border-t pt-4">
-          <.form let={f} for={@changeset} as="user" phx-change="validate" class="w-full">
-            <label class="flex items-center">
-              <%= checkbox f, :custom_racket, class: "form-checkbox" %>
-              <span class="ml-2 --text-sm text-gray-600 dark:text-white">Ik heb een eigen batje</span>
-            </label>
+        <.form let={f} for={@changeset} as="user" phx-change="validate" class="w-full">
+          <div class="border-t mt-6 flex">
+            <div class="w-2/3 pt-6">
+              <h2 class="text-gray-400 dark:text-gray-300 font-bold mb-2">Mijn profiel</h2>
 
-            <%= inputs_for f, :settings, fn fp -> %>
-              <label class="flex items-center mt-2">
-                <%= checkbox fp, :hide_teams, class: "form-checkbox" %>
-                <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg teams</span>
+              <label class="flex items-center">
+                <%= checkbox f, :custom_racket, class: "form-checkbox" %>
+                <span class="ml-2 --text-sm text-gray-600 dark:text-white">Ik heb een eigen batje</span>
               </label>
+            </div>
+            <div class="border-l w-1/3 pt-6 pl-6">
+              <h2 class="text-gray-400 dark:text-gray-300 font-bold mb-2">Instellingen</h2>
 
-              <label class="flex items-center mt-2">
-                <%= checkbox fp, :show_pictures, class: "form-checkbox" %>
-                <span class="ml-2 --text-sm text-gray-600 dark:text-white">Toon foto's</span>
-              </label>
-            <% end %>
-          </.form>
-        </div>
+              <%= inputs_for f, :settings, fn fp -> %>
+                <label class="flex items-center mt-2">
+                  <%= checkbox fp, :hide_teams, class: "form-checkbox" %>
+                  <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg teams</span>
+                </label>
+
+                <label class="flex items-center mt-2">
+                  <%= checkbox fp, :show_pictures, class: "form-checkbox" %>
+                  <span class="ml-2 --text-sm text-gray-600 dark:text-white">Toon foto's</span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+        </.form>
       </div>
 
       <div class="hidden md:flex md:1/3 lg:w-1/4 px-6 py-6">

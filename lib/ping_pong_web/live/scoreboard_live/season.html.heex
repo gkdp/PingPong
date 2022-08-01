@@ -87,11 +87,13 @@
     <div class="w-full bg-white dark:bg-gray-700">
       <div class="container mx-auto flex" x-data="heights">
         <div class="hidden lg:grid gap-y-4 lg:w-1/4 py-6 px-2 justify-end self-start">
-          <div class="text-center dark:text-gray-300 font-bold" x-bind:style="true && { height: heights[0] }">
+          <div class="text-center dark:text-gray-300 font-bold mb-6" x-bind:style="true && { height: heights[0] }"></div>
+
+          <div class="text-center dark:text-gray-300 font-bold" x-bind:style="true && { height: heights[1] }">
             <span x-show="chance" style="display: none;"><span x-text="chance"></span>%</span>
           </div>
 
-          <%= for {user, position} <- Enum.with_index(@users, 1) do %>
+          <%= for {user, position} <- Enum.with_index(@users, 2) do %>
             <div x-bind:style={"true && { height: heights[#{position}] }"}>
               <div class="flex items-center relative" x-bind:style={"true && { height: innerHeights[#{position}] }"}>
                 <a href="#" x-on:click.prevent={"compare(#{user.id}, #{user.elo})"} class="opacity-0 hover:opacity-100">
@@ -106,6 +108,17 @@
         </div>
 
         <div class="grid gap-y-4 w-full md:w-2/3 lg:w-2/4 py-6 px-2 sm:px-0 self-start" x-data="{ expanded: null }" id="scores">
+          <div class="flex flex-col mb-6 px-4">
+            <div class="text-lg font-bold mb-2">
+              Tafeltennis seizoen '<%= @season.title %>'
+            </div>
+
+            <p>
+              Het seizoen is gestart op <span class="font-semibold"><%= if !is_nil(@season.start_at), do: Timex.format!(@season.start_at, "%d-%m-%Y", :strftime), else: "Onbekend" %></span>
+              en <%= if !is_nil(@season.end_at), do: raw("eindigt op <span class=\"font-semibold\">#{Timex.format!(@season.end_at, "%d-%m-%Y", :strftime)}</span>."), else: "heeft nog geen einddatum." %>
+            </p>
+          </div>
+
           <div class="grid grid-cols-8 items-center text-gray-400 dark:text-gray-300 font-bold">
             <div class="text-center">
               #

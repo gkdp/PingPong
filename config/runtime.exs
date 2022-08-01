@@ -55,6 +55,11 @@ if config_env() == :prod do
 
   config :ping_pong, PingPongWeb.Endpoint, server: true
 
+  # Configure Guardian
+  config :ping_pong, PingPong.Guardian,
+    issuer: "ping_pong",
+    secret_key: System.get_env("GUARDIAN_SECRET")
+
   # ## Configuring the mailer
   #
   # In production you need to configure the mailer to use a different adapter.
@@ -89,8 +94,3 @@ config :ueberauth, Ueberauth.Strategy.OIDC,
     response_type: "code",
     scope: "openid profile email"
   ]
-
-# Configure Guardian
-config :ping_pong, PingPong.Guardian,
-  issuer: "ping_pong",
-  secret_key: System.get_env("GUARDIAN_SECRET")

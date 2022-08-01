@@ -54,6 +54,7 @@ defmodule PingPongWeb.Router do
       pipe_through :browser
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+      get "/auth", PingPongWeb.AuthController, :dev
     end
   end
 
