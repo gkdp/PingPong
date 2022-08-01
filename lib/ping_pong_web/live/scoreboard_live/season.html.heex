@@ -33,20 +33,6 @@
 
           <div class="absolute bottom-0 left-0 h-1 bg-black" style={"width: #{@percentage}%"}></div>
         </div>
-
-        <div class="sm:w-2/6 mx-auto grid grid-cols-3 hidden">
-          <div class="flex flex-col items-center">
-            <div class="rounded-full bg-yellow-300 text-white w-24 h-24 flex items-center justify-center text-3xl">2</div>
-          </div>
-
-          <div class="flex flex-col items-center">
-            <div class="rounded-full bg-yellow-300 text-white w-28 h-28 flex items-center justify-center text-3xl">1</div>
-          </div>
-
-          <div class="flex flex-col items-center">
-            <div class="rounded-full bg-yellow-300 text-white w-16 h-16 flex items-center justify-center text-3xl">3</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -84,16 +70,63 @@
       </div>
     </div>
 
+    <div class="w-full bg-white dark:bg-gray-700 py-6 border-b">
+      <div class="container mx-auto">
+        <div class="flex mb-6">
+          <div class="hidden lg:grid gap-y-4 lg:w-1/4 py-6 px-2 justify-end self-start"></div>
+
+          <div class="grid gap-y-4 w-full md:w-2/3 lg:w-2/4 px-2 sm:px-0 self-start">
+            <div class="flex flex-col px-4">
+              <div class="text-lg font-bold mb-2">
+                Tafeltennis seizoen '<%= @season.title %>'
+              </div>
+
+              <p>
+                Het seizoen is gestart op <span class="font-semibold"><%= if !is_nil(@season.start_at), do: Timex.format!(@season.start_at, "%d-%m-%Y", :strftime), else: "Onbekend" %></span>
+                en <%= if !is_nil(@season.end_at), do: raw("eindigt op <span class=\"font-semibold\">#{Timex.format!(@season.end_at, "%d-%m-%Y", :strftime)}</span>."), else: "heeft nog geen einddatum." %>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="sm:w-2/6 mx-auto grid grid-cols-3">
+          <div class="flex flex-col items-center justify-center">
+            <div class="rounded-full bg-gray-300 text-white w-24 h-24 flex items-center justify-center text-xl">2</div>
+          </div>
+
+          <div class="flex flex-col items-center justify-center">
+            <div class="rounded-full bg-yellow-300 text-white w-28 h-28 flex items-center justify-center text-3xl">1</div>
+          </div>
+
+          <div class="flex flex-col items-center justify-center">
+            <div class="rounded-full bg-[#CD7F32] text-white w-16 h-16 flex items-center justify-center text-lg">3</div>
+          </div>
+        </div>
+
+        <div class="sm:w-2/6 mx-auto grid grid-cols-3 mt-4">
+          <div class="flex flex-col items-center justify-center">
+            <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 1).user) %>
+          </div>
+
+          <div class="flex flex-col items-center justify-center">
+            <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 0).user) %>
+          </div>
+
+          <div class="flex flex-col items-center justify-center">
+            <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 2).user) %>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="w-full bg-white dark:bg-gray-700">
       <div class="container mx-auto flex" x-data="heights">
         <div class="hidden lg:grid gap-y-4 lg:w-1/4 py-6 px-2 justify-end self-start">
-          <div class="text-center dark:text-gray-300 font-bold mb-6" x-bind:style="true && { height: heights[0] }"></div>
-
-          <div class="text-center dark:text-gray-300 font-bold" x-bind:style="true && { height: heights[1] }">
+          <div class="text-center dark:text-gray-300 font-bold" x-bind:style="true && { height: heights[0] }">
             <span x-show="chance" style="display: none;"><span x-text="chance"></span>%</span>
           </div>
 
-          <%= for {user, position} <- Enum.with_index(@users, 2) do %>
+          <%= for {user, position} <- Enum.with_index(@users, 1) do %>
             <div x-bind:style={"true && { height: heights[#{position}] }"}>
               <div class="flex items-center relative" x-bind:style={"true && { height: innerHeights[#{position}] }"}>
                 <a href="#" x-on:click.prevent={"compare(#{user.id}, #{user.elo})"} class="opacity-0 hover:opacity-100">
@@ -108,17 +141,6 @@
         </div>
 
         <div class="grid gap-y-4 w-full md:w-2/3 lg:w-2/4 py-6 px-2 sm:px-0 self-start" x-data="{ expanded: null }" id="scores">
-          <div class="flex flex-col mb-6 px-4">
-            <div class="text-lg font-bold mb-2">
-              Tafeltennis seizoen '<%= @season.title %>'
-            </div>
-
-            <p>
-              Het seizoen is gestart op <span class="font-semibold"><%= if !is_nil(@season.start_at), do: Timex.format!(@season.start_at, "%d-%m-%Y", :strftime), else: "Onbekend" %></span>
-              en <%= if !is_nil(@season.end_at), do: raw("eindigt op <span class=\"font-semibold\">#{Timex.format!(@season.end_at, "%d-%m-%Y", :strftime)}</span>."), else: "heeft nog geen einddatum." %>
-            </p>
-          </div>
-
           <div class="grid grid-cols-8 items-center text-gray-400 dark:text-gray-300 font-bold">
             <div class="text-center">
               #
@@ -150,22 +172,26 @@
           <% end %>
         </div>
 
-        <div class="hidden md:flex md:1/3 lg:w-1/4 border-l px-6 py-6">
+        <div class="hidden md:flex md:1/3 lg:w-1/4 border-l pr-6 py-6">
           <.form let={f} for={@changeset} as="filters" phx-change="validate" class="w-full">
-            <label class="block">
-              <span class="text-gray-700 dark:text-white font-semibold">Filter op team</span>
-              <%= select f, :team, [{"Alle", nil}] ++ Enum.map(@teams, &({&1.name, &1.id})), class: "form-select mt-1 block w-full" %>
-            </label>
+            <div class="pl-6">
+              <label class="block">
+                <span class="text-gray-700 dark:text-white font-semibold">Filter op team</span>
+                <%= select f, :team, [{"Alle", nil}] ++ Enum.map(@teams, &({&1.name, &1.id})), class: "form-select mt-1 block w-full" %>
+              </label>
+            </div>
 
-            <label class="flex items-center mt-4 border-t pt-4">
-              <%= checkbox f, :hide_teams, class: "form-checkbox" %>
-              <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg teams</span>
-            </label>
+            <div class="pl-6 border-t space-y-4 mt-6 pt-6">
+              <label class="flex items-center">
+                <%= checkbox f, :hide_teams, class: "form-checkbox" %>
+                <span class="ml-2 --text-sm text-gray-600 dark:text-white">Verberg teams</span>
+              </label>
 
-            <label class="flex items-center pt-4">
-              <%= checkbox f, :show_pictures, class: "form-checkbox" %>
-              <span class="ml-2 --text-sm text-gray-600 dark:text-white">Toon foto's</span>
-            </label>
+              <label class="flex items-center">
+                <%= checkbox f, :show_pictures, class: "form-checkbox" %>
+                <span class="ml-2 --text-sm text-gray-600 dark:text-white">Toon foto's</span>
+              </label>
+            </div>
           </.form>
         </div>
       </div>
