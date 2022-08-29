@@ -104,17 +104,25 @@
         </div>
 
         <div class="sm:w-2/6 mx-auto grid grid-cols-3 mt-4">
-          <div class="flex flex-col items-center justify-center">
-            <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 1).user) %>
-          </div>
+          <%= if length(@users) > 2 do %>
+            <div class="flex flex-col items-center justify-center">
+              <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 1).user) %>
+            </div>
+          <% else %>
+            <div class="flex flex-col items-center justify-center"></div>
+          <% end %>
 
-          <div class="flex flex-col items-center justify-center">
-            <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 0).user) %>
-          </div>
+          <%= if length(@users) > 1 do %>
+            <div class="flex flex-col items-center justify-center">
+              <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 0).user) %>
+            </div>
+          <% end %>
 
-          <div class="flex flex-col items-center justify-center">
-            <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 2).user) %>
-          </div>
+          <%= if length(@users) > 3 do %>
+            <div class="flex flex-col items-center justify-center">
+              <%= PingPong.Scoreboard.User.get_slack_name_short(Enum.at(@users, 2).user) %>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
